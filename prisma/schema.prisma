@@ -1,0 +1,57 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "sqlite"
+    url      = "file:./dev.db"
+}
+
+model Channel {
+    id          Int      @id @default(autoincrement())
+    channelId   String   @unique
+    title       String
+    description String
+    createdAt   DateTime
+    video       Video[]
+    icon        String?
+}
+
+model Video {
+    id         Int       @id @default(autoincrement())
+    videoId    String    @unique
+    title      String
+    description String
+    uploadedAt DateTime
+    channel    Channel   @relation(fields: [channelId], references: [id])
+    channelId  Int
+    tags       Tag[]
+    history    History[]
+    chapters   Chapter[]
+    thumbnail  String?
+    duration   Int?
+}
+
+model Chapter {
+    id          Int     @id @default(autoincrement())
+    timestamp   Float
+    title       String
+    description String  @default("")
+    video       Video   @relation(fields: [videoId], references: [id])
+    videoId     Int
+    thumbnail   String?
+}
+
+model History {
+    id         Int      @id @default(autoincrement())
+    video      Video    @relation(fields: [videoId], references: [id])
+    videoId    Int
+    visitedAt  DateTime
+    bookmarked Boolean  @default(false)
+}
+
+model Tag {
+    id    Int     @id @default(autoincrement())
+    name  String  @unique
+    video Video[]
+}

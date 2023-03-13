@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+      "module": "ESNext",
+      "target": "ESNext",
+      "outDir": "dist",
+      "sourceMap": true,
+      "esModuleInterop": true,
+      "types": ["node", "vite/client"],
+      "moduleResolution": "Node",
+      "lib": ["DOM", "DOM.Iterable", "ESNext"],
+
+      "useDefineForClassFields": true,
+      "allowJs": false,
+      "skipLibCheck": false,
+      "allowSyntheticDefaultImports": true,
+      "strict": true,
+      "forceConsistentCasingInFileNames": true,
+      "resolveJsonModule": true,
+      "noEmit": true,
+      "jsx": "react-jsx",
+      "baseUrl": ".",
+      "paths": {
+        "components/*": ["frontend/components/*"]
+      }
+
+  },
+  "ts-node": {
+    "compilerOptions": {
+      "module": "CommonJS",
+      "target": "ES2020",
+      "esModuleInterop": true,
+      "types": ["node"],
+      "moduleResolution": "Node",
+      "lib": ["ES2020", "DOM"],
+      "strict": true,
+    },
+    "ignoreDiagnostics": [2393, 2300],
+    "require": ["dotenv/config", "tsconfig-paths/register"],
+    "exclude": ["node_modules", "scratch.ts"]
+
+  }
+}

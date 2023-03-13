@@ -1,0 +1,8 @@
+node_modules/
+scratch.*
+.env
+dist/
+prisma/*.db*
+prisma/migrations/
+assets/
+backup/
