@@ -14,30 +14,24 @@ const t = initTRPC.context<Context>().create({
 
 
 export const appRouter = t.router({
-  getChannels: t.procedure.input(
-    z.object({
-      title: z.string().optional()
-    }).optional().default({})
-  ).query(async ({ input: channelFilter }) => {
-    return await h.getFilteredChannels(channelFilter)
+  getChannels: t.procedure.query(async () => {
+    return await h.getChannels()
   }),
 
   getVideos: t.procedure.input(
     z.object({
-      title: z.string().optional(),
-      channelId: z.number().optional()
-    }).optional().default({})
-  ).query(async ({ input: videoFilter }) => {
-    return await h.getFilteredVideos(videoFilter)
+      channelId: z.number()
+    })
+  ).query(async ({ input }) => {
+    return await h.getVideos(input)
   }),
 
   getChapters: t.procedure.input(
     z.object({
-      title: z.string().optional(),
-      videoId: z.number().optional()
-    }).optional().default({})
-  ).query(async ({ input: chapterFilter }) => {
-    return await h.getFilteredChapters(chapterFilter)
+      videoId: z.number()
+    })
+  ).query(async ({ input }) => {
+    return await h.getChapters(input)
   }),
 
 })

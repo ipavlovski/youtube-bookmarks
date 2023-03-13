@@ -53,6 +53,26 @@ const useFilterStore = create<FilterStore>((set) => ({
   },
 }))
 
+
+type Selection = { channel: number | null, video: number | null, chapter: number | null }
+interface AppStore {
+  selection: Selection
+  actions: {
+    setSelection: (selection: Selection) => void
+  }
+}
+
+export const useAppStore = create<AppStore>((set) => ({
+  selection: { channel: null, video: null, chapter: null },
+  actions: {
+    setSelection: (selection: Selection) => set(() => ({ selection }))
+  }
+}))
+
+
+// useAppStore
+
+
 ////////////// TRPC / RQ
 
 export const trpc = createTRPCReact<AppRouter>()
