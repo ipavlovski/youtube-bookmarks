@@ -148,21 +148,29 @@ async function addRecord({ videoId, isoDate }: BookmarkRecord) {
 }
 
 
-const files = [
-  await getFullPaths('assets/data/2022-10-12/playlists'),
-  await getFullPaths('assets/data/2023-03-11/playlists')
-]
+async function importFiles(filepath: string) {
+  const files = await getFullPaths(filepath)
+  const acc: {videoId: string, isoDate: string}[][] = []
+  for (const path of files) {
+    const results = await readPlaylistFile(path)
+    acc.push(results.filter((v) => v.isoDate != null))
+  }
+  const records = uniqBy(acc.flat(), 'videoId')
 
-const acc: {videoId: string, isoDate: string}[][] = []
-for (const path of files.flat()) {
-  const results = await readPlaylistFile(path)
-  acc.push(results.filter((v) => v.isoDate != null))
+  for (let ind = 0; ind < records.length ; ind++) {
+    const result = await addRecord(records[ind])
+    console.log(`${ind}/${records.length}, record: ${result?.videoId}`)
+  }
 }
-const records = uniqBy(acc.flat(), 'videoId')
+// importFiles('assets/data/2022-10-12/playlists')
 
-// call more APIs after from here
-// 6215/7926, record: 6117
-for (let ind = 6221; ind < records.length -4 ; ind++) {
-  const result = await addRecord(records[ind])
-  console.log(`${ind}/${records.length - 4}, record: ${result?.videoId}`)
+
+
+async function getCommentList(videoId: string) {
+  const params1 = 'part=snippet,replies&maxResults=100&order=relevance&textFormat=plainText'
+  const params2 = `videoId=${videoId}&key=${YOUTUBE_API_KEY}`
+  const url = `https://youtube.googleapis.com/youtube/v3/commentThreads?${params1}&${params2}`
+  const results = await fetch(url).then((res) => res.json())
+  return results
 }
+// const tmp1 = await getCommentList('3q3FV65ZrUs')
