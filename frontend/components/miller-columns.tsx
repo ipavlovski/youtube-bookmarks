@@ -1,8 +1,13 @@
-import { createStyles, Grid, Text } from '@mantine/core'
+import { Avatar, createStyles, Flex, Grid, Text, Image } from '@mantine/core'
 import { useHotkeys } from '@mantine/hooks'
 import { Channel, Chapter, Video } from '@prisma/client'
+import { IconUser } from '@tabler/icons-react'
 import { useQueryClient } from '@tanstack/react-query'
-import { getSelectionCache, trpc, useAppStore, useFilteredChannels, useFilteredChapters, useFilteredVideos } from 'components/app'
+import { getSelectionCache, SERVER_URL, trpc, useAppStore, useFilteredChannels, useFilteredChapters, useFilteredVideos } from 'components/app'
+import { useYoutubeControls } from 'components/youtube-iframe'
+
+
+const url = (src: string | null) => src && `${SERVER_URL}/images/${src}`
 
 
 //  ==============================
@@ -40,10 +45,17 @@ function ChannelItem({ channel }: {channel: Channel}) {
     setChannel(channel.id)
   }
 
+
   return (
-    <Text className={cx(channel.id == selectedChannel && active)} onClick={clickHandler}>
-      {channel.title}
-    </Text>
+    <Flex align={'center'} gap={12}>
+      <Avatar src={url(channel?.icon)} radius="xl" m={4} >
+        <IconUser size="1.5rem" />
+      </Avatar>
+      <Text className={cx(channel.id == selectedChannel && active)} onClick={clickHandler}>
+        {channel.title}
+      </Text>
+    </Flex>
+
   )
 }
 
@@ -64,21 +76,39 @@ function ChannelColumn() {
 //  ==============================
 
 
-
-
 function VideoItem({ video }: {video: Video}) {
   const { classes: { active }, cx } = useStyles()
   const { setVideo } = useAppStore((state) => state.actions)
   const selectedVideo = useAppStore((state) => state.selection.videoId)
+
+  const controls = useYoutubeControls()
 
   const clickHandler = () => {
     setVideo(video.id)
   }
 
   return (
-    <Text className={cx(video.id == selectedVideo && active)} onClick={clickHandler}>
-      {video.title}
-    </Text>
+
+
+    <Flex align={'center'} gap={12} m={8}>
+
+
+      <Image
+        height={120}
+        width={200}
+        radius='sm'
+        src={url(video?.thumbnail)}
+        withPlaceholder
+        placeholder={<Text align="center">No thumbnail found yet.</Text>}
+        onClick={() => controls?.cueVideo(video.videoId)}
+        style={{ cursor: 'pointer' }}
+      />
+
+
+      <Text className={cx(video.id == selectedVideo && active)} onClick={clickHandler}>
+        {video.title}
+      </Text>
+    </Flex>
   )
 }
 
@@ -96,8 +126,6 @@ function VideoColumn() {
 //  ================================
 //              CHAPTERS
 //  ================================
-
-
 
 
 function ChapterItem({ chapter }: {chapter: Chapter}) {

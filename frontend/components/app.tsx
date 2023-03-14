@@ -154,7 +154,7 @@ function Root() {
     <>
       <YoutubeIframe />
       <Container pt={16} size={'lg'}>
-        <Preview />
+        {/* <Preview /> */}
         <MillerColumns />
       </Container>
     </>

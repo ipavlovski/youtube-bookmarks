@@ -1,5 +1,5 @@
 import { AspectRatio, Flex, Grid, Skeleton } from '@mantine/core'
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import YouTubePlayer from 'youtube-player'
 import type { YouTubePlayer as YTPlayer } from 'youtube-player/dist/types'
 import { create } from 'zustand'
@@ -27,6 +27,63 @@ export const useYoutubeStore = create<YoutubeStore>((set) => ({
     setVideoId: (videoId) => set(() => ({ videoId })),
   },
 }))
+
+
+export const useYoutubeControls = () => {
+  const player = useYoutubeStore((state) => state.player)
+
+  if (player == null) {
+    console.log('Youtube player unavailable')
+    return null
+  }
+
+  const seekTo = useCallback(async (seconds: number) => {
+    await player.seekTo(seconds, true)
+  }, [])
+
+  const cueVideo = useCallback(async (videoId: string, startSeconds?: number) => {
+    await player.cueVideoById(videoId, startSeconds)
+  }, [])
+
+  const togglePlayPause = useCallback(async () => {
+    const status = await getStatus()
+    status == 'PLAYING' ? player.pauseVideo() : player.playVideo()
+  }, [])
+
+  const fastForward = useCallback(async () => {
+    const position = await getPosition()
+    await seekTo(position + 0.2)
+  }, [])
+
+  const rewind = useCallback(async () => {
+    const position = await getPosition()
+    await seekTo(position - 0.2)
+  }, [])
+
+  const getPosition = useCallback(async () => {
+    return player.getCurrentTime().then((currentTime) => Math.round(currentTime * 1000) / 1000)
+  }, [])
+
+  const getStatus = useCallback(async () => {
+    const stateCode = await player.getPlayerState()
+    return Object.entries(PlayerStates).find((v) => v[1] == stateCode)![0]
+  }, [])
+
+  const getDuration = useCallback(async () => {
+    return player.getDuration()
+  }, [])
+
+  return {
+    seekTo,
+    cueVideo,
+    togglePlayPause,
+    fastForward,
+    rewind,
+    getPosition,
+    getStatus,
+    getDuration,
+  }
+}
 
 
 function Player() {
