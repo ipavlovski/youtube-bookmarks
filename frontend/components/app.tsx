@@ -13,6 +13,7 @@ import YoutubeIframe from 'components/youtube-iframe'
 import Omnibar from 'components/omnibar'
 import Preview from 'components/preview'
 import MillerColumns from 'components/miller-columns'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 export const SERVER_URL = `https://localhost:${import.meta.env.VITE_SERVER_PORT}`
 export const ORIGIN_URL = `https://localhost:${import.meta.env.VITE_PORT}`
@@ -54,18 +55,62 @@ const useFilterStore = create<FilterStore>((set) => ({
 }))
 
 
-type Selection = { channel: number | null, video: number | null, chapter: number | null }
+type SelectionCacheItem = { type: 'video-chapter' | 'channel-video', key: number, value: number }
+const selectionCache: SelectionCacheItem[] = []
+function setSelectionCache(item: SelectionCacheItem) {
+  const CACHE_MAX_ITEMS = 500
+  selectionCache.length + 1 <= CACHE_MAX_ITEMS ?
+    selectionCache.unshift(item) :
+    (selectionCache.pop(), selectionCache.unshift(item))
+}
+
+
+function getSelectionCache({ type, key }: Pick<SelectionCacheItem, 'type' | 'key'>) {
+  return selectionCache.find((item) => item.type == type && item.key == key)
+}
+
+
+type Selection = { channelId: number | null, videoId: number | null, chapterId: number | null }
 interface AppStore {
   selection: Selection
   actions: {
-    setSelection: (selection: Selection) => void
+    setChannel: (channelId: number) => void
+    setVideo: (videoId: number) => void
+    setChapter: (chapterId: number) => void
   }
 }
 
 export const useAppStore = create<AppStore>((set) => ({
-  selection: { channel: null, video: null, chapter: null },
+  selection: { channelId: null, videoId: null, chapterId: null },
   actions: {
-    setSelection: (selection: Selection) => set(() => ({ selection }))
+    setChannel: (newChannelId: number) => set((state) => {
+      const { channelId, videoId, chapterId } = state.selection
+
+      if (chapterId != null && videoId != null)
+        setSelectionCache({ type: 'video-chapter', key: videoId, value: chapterId })
+      if (channelId != null && videoId != null)
+        setSelectionCache({ type: 'channel-video', key: channelId, value: videoId })
+
+      return { selection: { channelId: newChannelId, videoId: null, chapterId: null, } }
+    }),
+    setVideo: (newVideoId: number) => set((state) => {
+      const { channelId, videoId, chapterId } = state.selection
+
+      if (chapterId != null && videoId != null)
+        setSelectionCache({ type: 'video-chapter', key: videoId, value: chapterId })
+      if (channelId != null && videoId != null)
+        setSelectionCache({ type: 'channel-video', key: channelId, value: videoId })
+
+      return { selection: { channelId: channelId, videoId: newVideoId, chapterId: null, } }
+    }),
+    setChapter: (newChapterId: number) => set((state) => {
+      const { channelId, videoId, chapterId } = state.selection
+
+      if (chapterId != null && videoId != null)
+        setSelectionCache({ type: 'video-chapter', key: videoId, value: chapterId })
+
+      return { selection: { channelId: channelId, videoId: videoId, chapterId: newChapterId, } }
+    })
   }
 }))
 
@@ -149,6 +194,7 @@ export default function App() {
           <Notifications />
           <Root />
         </MantineProvider>
+        <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </trpc.Provider>
 

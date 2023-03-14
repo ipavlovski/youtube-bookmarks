@@ -14,7 +14,9 @@ const t = initTRPC.context<Context>().create({
 
 
 export const appRouter = t.router({
-  getChannels: t.procedure.query(async () => {
+  getChannels: t.procedure.input(
+    z.object({}).optional()
+  ).query(async () => {
     return await h.getChannels()
   }),
 
