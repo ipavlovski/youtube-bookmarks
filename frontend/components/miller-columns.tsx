@@ -1,8 +1,8 @@
-import { createStyles, Grid, Skeleton, Text } from '@mantine/core'
+import { createStyles, Grid, Text } from '@mantine/core'
 import { useHotkeys } from '@mantine/hooks'
 import { Channel, Chapter, Video } from '@prisma/client'
 import { useQueryClient } from '@tanstack/react-query'
-import { trpc, useAppStore } from 'components/app'
+import { getSelectionCache, trpc, useAppStore } from 'components/app'
 
 
 //  ==============================
@@ -160,10 +160,22 @@ const useArrowShortcuts = () => {
     ],
     [
       'ArrowRight',() => {
-        // if (activePane == 'channel') {
-        //   console.log(setVideo(cachedVideo))
-        // }
-        // if (activePane == 'video') setChapter(cachedChapter)
+        if (activePane == 'channel') {
+          const cachedVideo = getSelectionCache( { type: 'channel-video', key: channelId! })
+          console.log(`channel->vid right, cached: ${cachedVideo}`)
+          if (cachedVideo == null) {
+            const videos = queryClient.getQueryData<Video[]>(
+              [['getVideos'], { type: 'query', input: { channelId: channelId! } }]
+            )
+            if (videos && videos.length > 0) setVideo(videos[0].id)
+          }
+          if (cachedVideo != null) setVideo(cachedVideo.value)
+        }
+        if (activePane == 'video') {
+          console.log('video->chapter right')
+          const cachedChapter = getSelectionCache( { type: 'video-chapter', key: videoId! })
+          if (cachedChapter != null) setChapter(cachedChapter.value)
+        }
       },
     ],
     [
@@ -175,8 +187,9 @@ const useArrowShortcuts = () => {
           if (channels != null && ind != null && ind != -1) setChannel(channels[ind-1].id)
         }
         if (activePane == 'video') {
-          const videos = queryClient.getQueryData<Video[]>([['getVideos'], { type: 'query' }])
-          console.log(`up vid, len: ${videos?.length}`)
+          const videos = queryClient.getQueryData<Video[]>(
+            [['getVideos'], { type: 'query', input: { channelId: channelId! } }]
+          )
           const ind = videos?.findIndex((video) => video.id == videoId)
           if (ind != null && ind == 0) return
           if (videos != null && ind != null && ind != -1) setVideo(videos[ind-1].id)
@@ -198,10 +211,11 @@ const useArrowShortcuts = () => {
           if (channels != null && ind != null && ind != -1) setChannel(channels[ind+1].id)
         }
         if (activePane == 'video') {
-          const videos = queryClient.getQueryData<Video[]>( [['getVideos'], { type: 'query' }] )
-          console.log(`down vid, len: ${videos?.length}`)
+          const videos = queryClient.getQueryData<Video[]>(
+            [['getVideos'], { type: 'query', input: { channelId: channelId! } }]
+          )
           const ind = videos?.findIndex((video) => video.id == videoId)
-          if (ind != null && ind == 0 && ind + 1 == videos?.length) return
+          if (ind != null && ind != -1 && ind + 1 == videos?.length) return
           if (videos != null && ind != null && ind != -1) setVideo(videos[ind+1].id)
         }
         if (activePane == 'chapter') {

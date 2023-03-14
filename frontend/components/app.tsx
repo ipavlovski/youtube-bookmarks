@@ -63,9 +63,7 @@ function setSelectionCache(item: SelectionCacheItem) {
     selectionCache.unshift(item) :
     (selectionCache.pop(), selectionCache.unshift(item))
 }
-
-
-function getSelectionCache({ type, key }: Pick<SelectionCacheItem, 'type' | 'key'>) {
+export function getSelectionCache({ type, key }: Pick<SelectionCacheItem, 'type' | 'key'>) {
   return selectionCache.find((item) => item.type == type && item.key == key)
 }
 
