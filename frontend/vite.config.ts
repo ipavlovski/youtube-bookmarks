@@ -15,6 +15,13 @@ export default ({ mode }: { mode: string }) => {
         key: `${process.env.HOME}/.config/ssl/homelab/homelab.key`,
         cert: `${process.env.HOME}/.config/ssl/homelab/homelab.crt`,
       },
+      // proxy: {
+      //   '/assets': {
+      //     target: 'https://localhost:3005/',
+      //     changeOrigin: true,
+      //     secure: false,
+      //   },
+      // },
     },
 
     resolve: {

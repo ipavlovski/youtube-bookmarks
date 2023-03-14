@@ -6,6 +6,7 @@ import morgan from 'morgan'
 import * as trpcExpress from '@trpc/server/adapters/express'
 
 import { appRouter, createContext } from 'backend/routes'
+import { STORAGE_DIRECTORY } from 'backend/config'
 
 // main server object
 const app = express()
@@ -16,6 +17,11 @@ app.use(cors())
 
 // logging stuff
 app.use(morgan(':method :url :response-time'))
+
+
+// serve files
+app.use(express.static(STORAGE_DIRECTORY))
+
 
 // use the routes
 app.use('/trpc', trpcExpress.createExpressMiddleware({ router: appRouter, createContext, }), )

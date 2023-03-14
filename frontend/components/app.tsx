@@ -32,28 +32,6 @@ const globalTheme: MantineThemeOverride = {
 
 ////////////// STORES
 
-interface FilterStore {
-  activeChannelId: number | null
-  activeVideoId: number | null
-  activeChapterId: number | null
-  actions: {
-    setChannel: (channelId: number | null) => void
-    setVideo: (videoId: number | null) => void
-    setChapter: (chapterId: number | null) => void
-  }
-}
-
-const useFilterStore = create<FilterStore>((set) => ({
-  activeChannelId: null,
-  activeVideoId: null,
-  activeChapterId: null,
-  actions: {
-    setChannel: (activeChannelId) => set(() => ({ activeChannelId })),
-    setVideo: (activeVideoId) => set(() => ({ activeVideoId })),
-    setChapter: (activeChapterId) => set(() => ({ activeChapterId })),
-  },
-}))
-
 
 type SelectionCacheItem = { type: 'video-chapter' | 'channel-video', key: number, value: number }
 const selectionCache: SelectionCacheItem[] = []
@@ -113,9 +91,6 @@ export const useAppStore = create<AppStore>((set) => ({
 }))
 
 
-// useAppStore
-
-
 ////////////// TRPC / RQ
 
 export const trpc = createTRPCReact<AppRouter>()
@@ -137,52 +112,56 @@ const queryClient = new QueryClient({
   },
 })
 
+
+////////////// QUERIES
+
+export const useFilteredChannels = () => {
+  const { data: channels = [] } = trpc.getChannels.useQuery()
+
+  return channels
+}
+
+export const useFilteredVideos = () => {
+  const selectedChannel = useAppStore((state) => state.selection.channelId)
+  const { data: videos = [] } = trpc.getVideos.useQuery(
+    { channelId: selectedChannel! }, { enabled: selectedChannel != null }
+  )
+
+  return videos
+}
+
+export const useFilteredChapters = () => {
+  const selectedVideo = useAppStore((state) => state.selection.videoId)
+  const { data: chapters = [] } = trpc.getChapters.useQuery(
+    { videoId: selectedVideo! }, { enabled: selectedVideo != null }
+  )
+
+  return chapters
+}
+
+
 ////////////// STYLES
 
 const useStyles = createStyles((theme) => ({}))
 
-////////////// LOGIC
 
-// const useTags = () => {
-//   const trpcContext = trpc.useContext()
-//   const { data: allTags = [] } = trpc.getTags.useQuery('')
-//   const createTag = trpc.createTag.useMutation({
-//     onSuccess: () => trpcContext.getTags.invalidate()
-//   })
-//   return { allTags, createTag }
-// }
-
-// const useFilteredChannels = () => {
-//   const activeChannel = useFilterStore((state) => state.activeChannelId)
-//   const { data: filteredBlogposts = [] } = trpc.getChannels.useQuery(selectedTags)
-
-//   return { selectedTags, setSelectedTags, filteredBlogposts }
-// }
-
-// const useFilteredVideos = () => {
-//   const activeChannel = useFilterStore((state) => state.activeChannelId)
-//   const { data: filteredBlogposts = [] } = trpc.getVideos.useQuery({ channelId: activeChannel })
-
-//   return { selectedTags, setSelectedTags, filteredBlogposts }
-// }
-
+////////////// APP
 
 function Root() {
   const { classes } = useStyles()
 
   return (
-    <Container pt={16} size={'lg'}>
-      {/* <Omnibar /> */}
+    <>
       <YoutubeIframe />
-      <Preview />
-      <MillerColumns />
+      <Container pt={16} size={'lg'}>
+        <Preview />
+        <MillerColumns />
+      </Container>
+    </>
 
-    </Container>
   )
 }
 
-
-////////////// APP
 
 export default function App() {
   return (

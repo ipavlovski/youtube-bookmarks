@@ -2,7 +2,7 @@ import { createStyles, Grid, Text } from '@mantine/core'
 import { useHotkeys } from '@mantine/hooks'
 import { Channel, Chapter, Video } from '@prisma/client'
 import { useQueryClient } from '@tanstack/react-query'
-import { getSelectionCache, trpc, useAppStore } from 'components/app'
+import { getSelectionCache, trpc, useAppStore, useFilteredChannels, useFilteredChapters, useFilteredVideos } from 'components/app'
 
 
 //  ==============================
@@ -30,13 +30,6 @@ const useStyles = createStyles(() => ({
 //              CHANNELS
 //  ================================
 
-const useFilteredChannels = () => {
-  // const { data: channels = [] } = trpc.getChannels.
-  // useQuery(undefined, { queryKey: ['getChannels', 'channels'] })
-  const { data: channels = [] } = trpc.getChannels.useQuery()
-
-  return channels
-}
 
 function ChannelItem({ channel }: {channel: Channel}) {
   const { classes: { active }, cx } = useStyles()
@@ -71,14 +64,7 @@ function ChannelColumn() {
 //  ==============================
 
 
-const useFilteredVideos = () => {
-  const selectedChannel = useAppStore((state) => state.selection.channelId)
-  const { data: videos = [] } = trpc.getVideos.useQuery(
-    { channelId: selectedChannel! }, { enabled: selectedChannel != null }
-  )
 
-  return videos
-}
 
 function VideoItem({ video }: {video: Video}) {
   const { classes: { active }, cx } = useStyles()
@@ -112,14 +98,7 @@ function VideoColumn() {
 //  ================================
 
 
-const useFilteredChapters = () => {
-  const selectedVideo = useAppStore((state) => state.selection.videoId)
-  const { data: chapters = [] } = trpc.getChapters.useQuery(
-    { videoId: selectedVideo! }, { enabled: selectedVideo != null }
-  )
 
-  return chapters
-}
 
 function ChapterItem({ chapter }: {chapter: Chapter}) {
   return (
