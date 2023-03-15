@@ -14,6 +14,7 @@ import Omnibar from 'components/omnibar'
 import Preview from 'components/preview'
 import MillerColumns from 'components/miller-columns'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import Header from 'components/header'
 
 export const SERVER_URL = `https://localhost:${import.meta.env.VITE_SERVER_PORT}`
 export const ORIGIN_URL = `https://localhost:${import.meta.env.VITE_PORT}`
@@ -94,19 +95,24 @@ export const useAppStore = create<AppStore>((set) => ({
 interface UiState {
   showDescription: boolean
   showComments: boolean
+  showPreview: boolean
   actions: {
     toggleDescription: (shouldShow?: boolean) => void
-    toggleComments: (shouldSHow?: boolean) => void
+    toggleComments: (shouldShow?: boolean) => void
+    togglePreview: (shouldShow?: boolean) => void
   }
 }
 export const useUiStore = create<UiState>((set) => ({
   showDescription: false,
   showComments: false,
+  showPreview: false,
   actions: {
     toggleComments: (shouldShow) => set((state) =>
       ({ showComments: shouldShow == null ? ! state.showComments : shouldShow })),
     toggleDescription: (shouldShow) => set((state) =>
-      ({ showDescription: shouldShow == null ? ! state.showDescription : shouldShow }))
+      ({ showDescription: shouldShow == null ? ! state.showDescription : shouldShow })),
+    togglePreview: (shouldShow) => set((state) =>
+      ({ showPreview: shouldShow == null ? ! state.showPreview : shouldShow }))
   }
 }))
 
@@ -167,20 +173,7 @@ const useStyles = createStyles((theme) => ({}))
 
 ////////////// APP
 
-function Header() {
 
-  const { toggleComments, toggleDescription } = useUiStore((state) => state.actions)
-
-  return (
-    <div style={{ height: 32 }}>
-      <button style={{ marginRight: 10 }} onClick={() => toggleDescription()}>
-        Toggle Description
-      </button>
-      <button style={{ marginRight: 10 }} onClick={() => console.log('click2')}>button2</button>
-      <button style={{ marginRight: 10 }} onClick={() => console.log('click3')}>button3</button>
-    </div>
-  )
-}
 
 function Root() {
   const { classes } = useStyles()
