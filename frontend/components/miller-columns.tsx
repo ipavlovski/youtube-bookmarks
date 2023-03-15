@@ -4,7 +4,7 @@ import { Channel, Chapter, Video } from '@prisma/client'
 import { IconUser } from '@tabler/icons-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { getSelectionCache, SERVER_URL, trpc, useAppStore, useFilteredChannels, useFilteredChapters, useFilteredVideos } from 'components/app'
-import { useYoutubeControls } from 'components/youtube-iframe'
+import { YoutubeControls } from 'components/youtube-iframe'
 
 
 const url = (src: string | null) => src && `${SERVER_URL}/images/${src}`
@@ -81,7 +81,7 @@ function VideoItem({ video }: {video: Video}) {
   const { setVideo } = useAppStore((state) => state.actions)
   const selectedVideo = useAppStore((state) => state.selection.videoId)
 
-  const controls = useYoutubeControls()
+  const { cueVideo } = YoutubeControls()
 
   const clickHandler = () => {
     setVideo(video.id)
@@ -100,7 +100,7 @@ function VideoItem({ video }: {video: Video}) {
         src={url(video?.thumbnail)}
         withPlaceholder
         placeholder={<Text align="center">No thumbnail found yet.</Text>}
-        onClick={() => controls?.cueVideo(video.videoId)}
+        onClick={() => cueVideo(video.videoId)}
         style={{ cursor: 'pointer' }}
       />
 
