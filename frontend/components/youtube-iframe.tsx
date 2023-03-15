@@ -1,9 +1,9 @@
-import { AspectRatio, Flex, Grid, Skeleton } from '@mantine/core'
+import { AspectRatio, Flex, Grid, Skeleton, Text } from '@mantine/core'
 import { useCallback, useEffect, useRef } from 'react'
 import YouTubePlayer from 'youtube-player'
 import type { YouTubePlayer as YTPlayer } from 'youtube-player/dist/types'
 import { create } from 'zustand'
-import { ORIGIN_URL } from 'components/app'
+import { ORIGIN_URL, useUiStore } from 'components/app'
 import PlayerStates from 'youtube-player/dist/constants/PlayerStates'
 
 interface YoutubeStore {
@@ -85,6 +85,54 @@ export const useYoutubeControls = () => {
   }
 }
 
+function ProgressMarker({ marker }: {marker: number}) {
+
+  // const controls = useYoutubeControls()
+
+  const percent = (ms: number, duration: number) => Math.floor((ms / duration!) * 100)
+  const clickHandler =() => {
+    // controls && controls.seekTo()
+
+  }
+
+
+  return (
+    <div style={{
+      position: 'absolute',
+      height: 12,
+      width: 6,
+      backgroundColor: 'green',
+      left: `${percent}%`,
+      cursor: 'pointer'
+    }}
+    onClick={() => clickHandler()}
+    >
+    </div>
+  )
+}
+
+
+function ProgressBar() {
+
+  const markers = [1000, 2000, 5000, 10000]
+
+  const clickHandler = () => {
+    console.log('bar!')
+  }
+
+  return (
+    <div style={{
+      height: 12,
+      backgroundColor: 'grey',
+      marginTop: 10
+    }}>
+      <div style={{ position: 'relative' }}>
+        {/* {markers.map((marker) => <ProgressMarker key={marker} marker={marker} />)} */}
+      </div>
+    </div>
+  )
+}
+
 
 function Player() {
   // const { durationSetter } = useDurationSetter()
@@ -114,19 +162,43 @@ function Player() {
       if (status == 'VIDEO_CUED') {
         const url = await player.getVideoUrl()
         const duration = await player.getDuration()
+        console.log(`duration: ${duration}`)
         const videoId = new URL(url).searchParams.get('v')!
         // videoId != defaultVideoId && durationSetter([url, duration])
       }
     })
   }, [])
 
+  // {/* <Skeleton animate={false} /> */}
   return <div ref={youtubeRef} />
 }
 
-export default function YoutubeIframe() {
+function VideoDescription({ description }: {description: string}) {
   return (
-    <AspectRatio ratio={16 / 9} mx="auto" p={0} >
-      <Player />
-    </AspectRatio>
+    <Text>{description}</Text>
+  )
+}
+
+
+export default function YoutubeIframe() {
+  const shouldShowDescription = useUiStore((state) => state.showDescription)
+
+  return (
+    <>
+      <Grid>
+        <Grid.Col span={shouldShowDescription ? 8 : 12}>
+          <AspectRatio ratio={16 / 9} mx="auto" p={0} >
+            <Player />
+          </AspectRatio>
+          <ProgressBar />
+        </Grid.Col>
+        {shouldShowDescription &&
+        <Grid.Col span={4}>
+          <VideoDescription description={'asdf'}/>
+        </Grid.Col>}
+      </Grid>
+    </>
+
+
   )
 }

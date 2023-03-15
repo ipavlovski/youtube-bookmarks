@@ -59,7 +59,7 @@ interface AppStore {
 export const useAppStore = create<AppStore>((set) => ({
   selection: { channelId: null, videoId: null, chapterId: null },
   actions: {
-    setChannel: (newChannelId: number) => set((state) => {
+    setChannel: (newChannelId) => set((state) => {
       const { channelId, videoId, chapterId } = state.selection
 
       if (chapterId != null && videoId != null)
@@ -69,7 +69,7 @@ export const useAppStore = create<AppStore>((set) => ({
 
       return { selection: { channelId: newChannelId, videoId: null, chapterId: null, } }
     }),
-    setVideo: (newVideoId: number) => set((state) => {
+    setVideo: (newVideoId) => set((state) => {
       const { channelId, videoId, chapterId } = state.selection
 
       if (chapterId != null && videoId != null)
@@ -79,7 +79,7 @@ export const useAppStore = create<AppStore>((set) => ({
 
       return { selection: { channelId: channelId, videoId: newVideoId, chapterId: null, } }
     }),
-    setChapter: (newChapterId: number) => set((state) => {
+    setChapter: (newChapterId) => set((state) => {
       const { channelId, videoId, chapterId } = state.selection
 
       if (chapterId != null && videoId != null)
@@ -87,6 +87,26 @@ export const useAppStore = create<AppStore>((set) => ({
 
       return { selection: { channelId: channelId, videoId: videoId, chapterId: newChapterId, } }
     })
+  }
+}))
+
+
+interface UiState {
+  showDescription: boolean
+  showComments: boolean
+  actions: {
+    toggleDescription: (shouldShow?: boolean) => void
+    toggleComments: (shouldSHow?: boolean) => void
+  }
+}
+export const useUiStore = create<UiState>((set) => ({
+  showDescription: false,
+  showComments: false,
+  actions: {
+    toggleComments: (shouldShow) => set((state) =>
+      ({ showComments: shouldShow == null ? ! state.showComments : shouldShow })),
+    toggleDescription: (shouldShow) => set((state) =>
+      ({ showDescription: shouldShow == null ? ! state.showDescription : shouldShow }))
   }
 }))
 
@@ -147,11 +167,27 @@ const useStyles = createStyles((theme) => ({}))
 
 ////////////// APP
 
+function Header() {
+
+  const { toggleComments, toggleDescription } = useUiStore((state) => state.actions)
+
+  return (
+    <div style={{ height: 32 }}>
+      <button style={{ marginRight: 10 }} onClick={() => toggleDescription()}>
+        Toggle Description
+      </button>
+      <button style={{ marginRight: 10 }} onClick={() => console.log('click2')}>button2</button>
+      <button style={{ marginRight: 10 }} onClick={() => console.log('click3')}>button3</button>
+    </div>
+  )
+}
+
 function Root() {
   const { classes } = useStyles()
 
   return (
     <>
+      <Header />
       <YoutubeIframe />
       <Container pt={16} size={'lg'}>
         {/* <Preview /> */}

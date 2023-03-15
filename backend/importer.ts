@@ -5,7 +5,6 @@ import { DateTime } from 'luxon'
 import { randomUUID as uuidv4 } from 'node:crypto'
 import { writeFile } from 'node:fs/promises'
 
-
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY
 const prisma = new PrismaClient()
 
@@ -164,6 +163,14 @@ async function importFiles(filepath: string) {
 }
 // importFiles('assets/data/2022-10-12/playlists')
 
+
+
+async function getDuration(videoId: string) {
+  const params = `part=contentDetails&id=${videoId}&key=${YOUTUBE_API_KEY}`
+  const url = `https://youtube.googleapis.com/youtube/v3/videos?${params}`
+  const results = await fetch(url).then((res) => res.json())
+  return results.items[0]?.contentDetails?.duration
+}
 
 
 async function getCommentList(videoId: string) {

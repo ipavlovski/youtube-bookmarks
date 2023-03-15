@@ -18,28 +18,27 @@ model Channel {
 }
 
 model Video {
-    id         Int       @id @default(autoincrement())
-    videoId    String    @unique
-    title      String
+    id          Int       @id @default(autoincrement())
+    videoId     String    @unique
+    title       String
     description String
-    uploadedAt DateTime
-    channel    Channel   @relation(fields: [channelId], references: [id])
-    channelId  Int
-    tags       Tag[]
-    history    History[]
-    chapters   Chapter[]
-    thumbnail  String?
-    duration   Int?
+    uploadedAt  DateTime
+    channel     Channel   @relation(fields: [channelId], references: [id])
+    channelId   Int
+    tags        Tag[]
+    history     History[]
+    chapters    Chapter[]
+    thumbnail   String?
+    duration    Int
 }
 
 model Chapter {
-    id          Int     @id @default(autoincrement())
-    timestamp   Float
-    title       String
-    description String  @default("")
-    video       Video   @relation(fields: [videoId], references: [id])
-    videoId     Int
-    thumbnail   String?
+    id        Int    @id @default(autoincrement())
+    timestamp Float
+    title     String
+    capture   String
+    video     Video  @relation(fields: [videoId], references: [id])
+    videoId   Int
 }
 
 model History {
