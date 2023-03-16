@@ -13,3 +13,13 @@ export async function getVideos({ channelId }: { channelId: number}) {
 export async function getChapters({ videoId }: { videoId: number}) {
   return await prisma.chapter.findMany({ where: { videoId }, take: 100 })
 }
+
+export async function getVideoForPlayback(videoId: string) {
+  return await prisma.video.findFirstOrThrow({
+    where: { videoId },
+    include: {
+      channel: true,
+      chapters: true
+    }
+  })
+}

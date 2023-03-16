@@ -1,34 +1,43 @@
-import { AspectRatio, Flex, Grid, Skeleton, Text } from '@mantine/core'
-import { useCallback, useEffect, useRef } from 'react'
+import { AspectRatio, Button, createStyles, Flex, Grid, Popover, Skeleton, Text, TextInput } from '@mantine/core'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import YouTubePlayer from 'youtube-player'
 import type { YouTubePlayer as YTPlayer } from 'youtube-player/dist/types'
 import { create } from 'zustand'
-import { ORIGIN_URL, useUiStore } from 'components/app'
+import { ORIGIN_URL, useAppStore, useUiStore, useVideoForPlayback } from 'components/app'
 import PlayerStates from 'youtube-player/dist/constants/PlayerStates'
-import { useHotkeys } from '@mantine/hooks'
+import { useDisclosure, useHotkeys, useHover } from '@mantine/hooks'
+import { Chapter } from '@prisma/client'
 
 interface YoutubeStore {
   player: YTPlayer | null
-  duration: number | null
   videoId: string | null
   actions: {
     setPlayer: (player: YTPlayer) => void
-    setDuration: (duration: number) => void
     setVideoId: (videoId: string) => void
   }
 }
 
 export const useYoutubeStore = create<YoutubeStore>((set) => ({
   player: null,
-  duration: null,
   videoId: null,
   actions: {
     setPlayer: (player) => set(() => ({ player })),
-    setDuration: (duration) => set(() => ({ duration })),
     setVideoId: (videoId) => set(() => ({ videoId })),
   },
 }))
 
+
+const useYoutubeShortcuts = () => {
+  const { togglePlayPause, fastForward, rewind } = YoutubeControls()
+
+  useHotkeys([
+    ['space', async () => togglePlayPause()],
+    ['.', async () => fastForward()],
+    [',', async () => rewind()],
+    ['<', async () => console.log('decrease playback rate')],
+    ['>', async () => console.log('increase playback rate')],
+  ])
+}
 
 export const YoutubeControls = () => {
   const seekTo = async (seconds: number) => {
@@ -73,92 +82,125 @@ export const YoutubeControls = () => {
     return player?.getDuration()
   }
 
+  const getVideoId = async () => {
+    const player = useYoutubeStore.getState().player
+    const url = await player?.getVideoUrl() || null
+    return url && new URL(url).searchParams?.get('v')
+  }
+
   return {
     seekTo,
-    cueVideo,
+    cueVideo: cueVideo,
     togglePlayPause,
     fastForward,
     rewind,
     getPosition,
     getStatus,
     getDuration,
+    getVideoId
   }
 }
 
-function ProgressMarker({ marker }: {marker: number}) {
 
-  // const controls = useYoutubeControls()
+const useStyles = createStyles((theme) => ({
+  bar: {
+    height: 18,
+    backgroundColor: '#a9a9a9',
+    marginTop: 10,
+  },
+  marker: {
+    position: 'absolute',
+    height: 18,
+    width: 6,
+    backgroundColor: 'green',
+    cursor: 'pointer',
+  }
+}))
 
-  const percent = (ms: number, duration: number) => Math.floor((ms / duration!) * 100)
-  const clickHandler =() => {
-    // controls && controls.seekTo()
 
+const percent = (current: number, duration: number) => Math.round(current/duration * 10000) / 100
+
+function ProgressBar() {
+  const video = useVideoForPlayback()
+  const { classes: { bar, marker } } = useStyles()
+  const { hovered, ref } = useHover()
+  const [hoverPosition, setHoverPosition] = useState(0)
+  const [opened, { close, open, toggle }] = useDisclosure(false)
+
+  const enterHandler = async () => {
+    const { getPosition } = YoutubeControls()
+    const position = await getPosition()
+    ! opened && setHoverPosition(position || 0)
   }
 
+  return (
+    <div className={bar} onMouseEnter={enterHandler} ref={ref} onClick={open}>
+      <div style={{ position: 'relative' }}>
+        {/* chapter markers */}
+        {video &&
+        video.chapters.map((chapter) =>
+          (<ProgressMarker key={chapter.id} chapter={chapter} duration={video.duration} />))}
+
+        {/* hover/click capture */}
+        {(hovered || opened) && hoverPosition != 0 && video != null && (
+          <Popover width={300} trapFocus position="bottom"
+            withArrow shadow="md" opened={opened} onChange={toggle}>
+            <Popover.Target>
+              <div className={marker} onClick={open}
+                style={{ left: `${percent(hoverPosition, video.duration)}%` }} />
+            </Popover.Target>
+            <Popover.Dropdown>
+
+              <TextInput label="Name" placeholder="Name" size="xs" />
+              <TextInput label="Email" placeholder="john@doe.com" size="xs" mt="xs" />
+
+            </Popover.Dropdown>
+          </Popover>
+        )}
+
+      </div>
+    </div>
+  )
+}
+
+function ProgressMarker({ chapter, duration }: {chapter: Chapter, duration: number }) {
+  const { timestamp, title, capture } = chapter
+  const { classes: { marker } } = useStyles()
+
+  const clickHandler =() => { console.log(`clicked on ${title}`) }
 
   return (
-    <div style={{
-      position: 'absolute',
-      height: 12,
-      width: 6,
-      backgroundColor: 'green',
-      left: `${percent}%`,
-      cursor: 'pointer'
-    }}
-    onClick={() => clickHandler()}
+    <div className={marker} style={{ left: `${Math.floor(timestamp / duration) * 100}%` }}
+      onClick={() => clickHandler()}
     >
     </div>
   )
 }
 
 
-function ProgressBar() {
-
-  const markers = [1000, 2000, 5000, 10000]
-
-  const clickHandler = () => {
-    console.log('bar!')
-  }
-
-  return (
-    <div style={{
-      height: 12,
-      backgroundColor: 'grey',
-      marginTop: 10
-    }}>
-      <div style={{ position: 'relative' }}>
-        {/* {markers.map((marker) => <ProgressMarker key={marker} marker={marker} />)} */}
-      </div>
-    </div>
-  )
-}
-
-
-const useYoutubeShortcuts = () => {
-  const { togglePlayPause, fastForward, rewind } = YoutubeControls()
-
-  useHotkeys([
-    ['space', async () => togglePlayPause()],
-    ['.', async () => fastForward()],
-    [',', async () => rewind()],
-  ])
-}
-
 function Player() {
   const { setPlayer } = useYoutubeStore((state) => state.actions)
+  const showPreview = useUiStore((state) => state.showPreview)
   const youtubeRef = useRef<HTMLDivElement>(null)
   useYoutubeShortcuts()
 
   useEffect(() => {
+    console.log(`Loading youtube with preview: ${showPreview}`)
     if (! youtubeRef.current) return
     const player = YouTubePlayer(youtubeRef.current, {
-      // videoId: '_JQAve05o_0',
       playerVars: {
         enablejsapi: 1,
         origin: ORIGIN_URL,
         modestbranding: 1,
+        controls: 1
       },
+      // videoId: '_JQAve05o_0',
+      // events: {
+      //   ready: () => console.log('ready')
+      // }
     })
+
+    const { getVideoId, getStatus } = YoutubeControls()
 
     player.on('ready', () => {
       console.log('player ready.')
@@ -166,18 +208,12 @@ function Player() {
     })
 
     player.on('stateChange', async () => {
-      const stateCode = await player.getPlayerState()
-      const status = Object.entries(PlayerStates).find((v) => v[1] == stateCode)?.[0]
-      console.log(`youtube status: ${status}`)
-      if (status == 'VIDEO_CUED') {
-        const url = await player.getVideoUrl()
-        const videoId = new URL(url).searchParams.get('v')
-        console.log(`cued video id: ${videoId}`)
-      }
+      const status = await getStatus()
+      const videoId = await getVideoId()
+      console.log(`status: ${status}, videoId: ${videoId}`)
     })
-  }, [])
+  }, [showPreview])
 
-  // {/* <Skeleton animate={false} /> */}
   return <div ref={youtubeRef} />
 }
 
@@ -206,7 +242,5 @@ export default function YoutubeIframe() {
         </Grid.Col>}
       </Grid>
     </>
-
-
   )
 }

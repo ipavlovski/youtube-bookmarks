@@ -36,4 +36,10 @@ export const appRouter = t.router({
     return await h.getChapters(input)
   }),
 
+  getVideoForPlayback: t.procedure.input(
+    z.string().length(11)
+  ).query(async ({ input }) => {
+    return await h.getVideoForPlayback(input)
+  })
+
 })

@@ -4,7 +4,7 @@ import { Channel, Chapter, Video } from '@prisma/client'
 import { IconUser } from '@tabler/icons-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { getSelectionCache, SERVER_URL, trpc, useAppStore, useFilteredChannels, useFilteredChapters, useFilteredVideos } from 'components/app'
-import { YoutubeControls } from 'components/youtube-iframe'
+import { useYoutubeStore, YoutubeControls } from 'components/youtube-iframe'
 
 
 const url = (src: string | null) => src && `${SERVER_URL}/images/${src}`
@@ -80,18 +80,22 @@ function VideoItem({ video }: {video: Video}) {
   const { classes: { active }, cx } = useStyles()
   const { setVideo } = useAppStore((state) => state.actions)
   const selectedVideo = useAppStore((state) => state.selection.videoId)
+  const { setVideoId } = useYoutubeStore((state) => state.actions)
 
   const { cueVideo } = YoutubeControls()
 
-  const clickHandler = () => {
+  const titleClickHandler = () => {
     setVideo(video.id)
+  }
+
+  const thumbnailClickHandler = () => {
+    cueVideo(video.videoId)
+    setVideoId(video.videoId)
   }
 
   return (
 
-
     <Flex align={'center'} gap={12} m={8}>
-
 
       <Image
         height={120}
@@ -100,12 +104,12 @@ function VideoItem({ video }: {video: Video}) {
         src={url(video?.thumbnail)}
         withPlaceholder
         placeholder={<Text align="center">No thumbnail found yet.</Text>}
-        onClick={() => cueVideo(video.videoId)}
+        onClick={thumbnailClickHandler}
         style={{ cursor: 'pointer' }}
       />
 
 
-      <Text className={cx(video.id == selectedVideo && active)} onClick={clickHandler}>
+      <Text className={cx(video.id == selectedVideo && active)} onClick={titleClickHandler}>
         {video.title}
       </Text>
     </Flex>

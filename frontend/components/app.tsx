@@ -9,7 +9,7 @@ import superjson from 'superjson'
 import { create } from 'zustand'
 
 import type { AppRouter } from 'frontend/../trpc'
-import YoutubeIframe from 'components/youtube-iframe'
+import YoutubeIframe, { useYoutubeStore } from 'components/youtube-iframe'
 import Omnibar from 'components/omnibar'
 import Preview from 'components/preview'
 import MillerColumns from 'components/miller-columns'
@@ -166,13 +166,21 @@ export const useFilteredChapters = () => {
 }
 
 
+export const useVideoForPlayback = () => {
+  const videoId = useYoutubeStore((state) => state.videoId)
+  const { data: videoForPlayback = null } = trpc.getVideoForPlayback.useQuery(
+    videoId!, { enabled: videoId != null }
+  )
+  return videoForPlayback
+}
+
+
 ////////////// STYLES
 
 const useStyles = createStyles((theme) => ({}))
 
 
 ////////////// APP
-
 
 
 function Root() {

@@ -1,12 +1,16 @@
 import { ActionIcon, Button, Group, Popover, Text, Textarea } from '@mantine/core'
 import { IconBook, IconCheck } from '@tabler/icons-react'
 import { useUiStore } from 'components/app'
+import { YoutubeControls } from 'components/youtube-iframe'
 import { ClipboardEvent, useState } from 'react'
 
 
 function CaptureButton() {
 
   const [base64, setBase64] = useState<string | ArrayBuffer | null>(null)
+  const [timestamp, setTimestamp] = useState(0)
+  const [videoId, setVideoId] = useState('')
+
 
   const blobToBase64 = async (blob: Blob): Promise<string | ArrayBuffer | null> => {
     return new Promise((resolve, reject) => {
@@ -18,12 +22,12 @@ function CaptureButton() {
   }
 
   const pasteHandler = async (e: ClipboardEvent<HTMLTextAreaElement>) => {
-
     const clipboardText = e.clipboardData?.getData('Text').trim() || ''
     const indNewLine = clipboardText.indexOf('\n')
     const firstLine = clipboardText.substring(0, indNewLine)
     const restLines = clipboardText.substring(indNewLine + 1)
     const isBase64 = /^data:.*:base64/.test(firstLine)
+
 
     // handle base64
     if (isBase64) {
@@ -43,10 +47,19 @@ function CaptureButton() {
         setBase64(b64)
       }
     }
-
   }
+
+
+  const openHandler = async () => {
+    const { getPosition, getVideoId } = YoutubeControls()
+    const position = await getPosition()
+    setTimestamp(position || 0)
+    const videoId = await getVideoId()
+    setVideoId(videoId || '')
+  }
+
   return (
-    <Popover position="bottom-start" withArrow shadow="md" radius="sm">
+    <Popover position="bottom-start" withArrow shadow="md" radius="sm" onOpen={openHandler}>
 
       <Popover.Target>
         <Button p={0} m={0}>
@@ -56,13 +69,18 @@ function CaptureButton() {
       </Popover.Target>
 
       <Popover.Dropdown >
-        <Text>23:33.123</Text>
         <Group >
-          <Textarea onPaste={pasteHandler} autosize placeholder="Add title" style={{ width: 300 }}/>
-          <ActionIcon color="lime" size="md" radius="xl" variant="filled" disabled>
+
+          {/* TIMESTAMP */}
+          <Text>{videoId} @ {timestamp} s</Text>
+
+          <ActionIcon color="lime" size="sm" radius="xl" variant="filled" disabled m={10}>
             <IconCheck size="1.625rem" />
           </ActionIcon>
         </Group>
+
+        {/* TITLE + PREVIEW INPUT */}
+        <Textarea onPaste={pasteHandler} autosize placeholder="Add title" style={{ width: 300 }}/>
 
         {/* PREVIEW */}
         {typeof base64 == 'string' && base64.startsWith('data:video/mp4') &&
@@ -78,7 +96,7 @@ function CaptureButton() {
 }
 
 export default function Header() {
-
+  const showPreview = useUiStore((state) => state.showPreview)
   const { toggleComments, toggleDescription, togglePreview } = useUiStore((state) => state.actions)
 
   return (
@@ -89,7 +107,10 @@ export default function Header() {
       <button style={{ marginRight: 10 }} onClick={() => toggleComments()}>
         Toggle Comments
       </button>
-      <button style={{ marginRight: 10 }} onClick={() => togglePreview()}>
+      <button style={{ marginRight: 10 }} onClick={() => {
+        console.log('show preview:', showPreview)
+        togglePreview()
+      }}>
         Toggle Preview
       </button>
       <CaptureButton />
