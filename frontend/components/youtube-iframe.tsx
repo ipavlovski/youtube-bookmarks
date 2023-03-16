@@ -1,12 +1,14 @@
-import { AspectRatio, Button, createStyles, Flex, Grid, Popover, Skeleton, Text, TextInput } from '@mantine/core'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { ActionIcon, AspectRatio, Button, createStyles, Flex, Grid, Group, Popover, Skeleton, Text, Textarea, TextInput } from '@mantine/core'
+import { useCallback, useEffect, useRef, useState, ClipboardEvent } from 'react'
 import YouTubePlayer from 'youtube-player'
 import type { YouTubePlayer as YTPlayer } from 'youtube-player/dist/types'
 import { create } from 'zustand'
-import { ORIGIN_URL, useAppStore, useUiStore, useVideoForPlayback } from 'components/app'
+import { ORIGIN_URL, trpc, useAppStore, useUiStore, useVideoForPlayback } from 'components/app'
 import PlayerStates from 'youtube-player/dist/constants/PlayerStates'
 import { useDisclosure, useHotkeys, useHover } from '@mantine/hooks'
 import { Chapter } from '@prisma/client'
+import { IconCheck } from '@tabler/icons-react'
+import { Duration } from 'luxon'
 
 interface YoutubeStore {
   player: YTPlayer | null
@@ -125,12 +127,70 @@ function ProgressBar() {
   const { classes: { bar, marker } } = useStyles()
   const { hovered, ref } = useHover()
   const [hoverPosition, setHoverPosition] = useState(0)
-  const [opened, { close, open, toggle }] = useDisclosure(false)
+  const [opened, { open, toggle }] = useDisclosure(false)
+  const [base64, setBase64] = useState<string | ArrayBuffer | null>(null)
+  const [titleValue, setTitleValue] = useState('')
+
+  const createChapter = trpc.createChapter.useMutation()
+
+  const timestamp = Duration.fromObject({ seconds: hoverPosition }).toISOTime().match(/(00:)?(.*)/)?.[2]
+
+  const blobToBase64 = async (blob: Blob): Promise<string | ArrayBuffer | null> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result)
+      reader.onerror = (err) => reject(err)
+      reader.readAsDataURL(blob)
+    })
+  }
+
+  const pasteHandler = async (e: ClipboardEvent<HTMLTextAreaElement>) => {
+    const clipboardText = e.clipboardData?.getData('Text').trim() || ''
+    const indNewLine = clipboardText.indexOf('\n')
+    const firstLine = clipboardText.substring(0, indNewLine)
+    const restLines = clipboardText.substring(indNewLine + 1)
+    const isBase64 = /^data:.*:base64/.test(firstLine)
+
+    // handle base64
+    if (isBase64) {
+      e.stopPropagation()
+      e.preventDefault()
+      setBase64(`data:video/mp4;base64,${restLines}`)
+      return
+    }
+
+    // handlethe image scenario
+    const query = await navigator.permissions.query({ name: 'clipboard-read' as PermissionName })
+    if (query.state == 'granted' || query.state == 'prompt') {
+      const clipboard = await navigator.clipboard.read()
+      if (clipboard[0].types.includes('image/png')) {
+        const blob = await clipboard[0].getType('image/png')
+        const b64 = await blobToBase64(blob)
+        setBase64(b64)
+      }
+    }
+  }
+
 
   const enterHandler = async () => {
     const { getPosition } = YoutubeControls()
     const position = await getPosition()
     ! opened && setHoverPosition(position || 0)
+  }
+
+  const submitHandler = async () => {
+    console.log('Submitting a cnew chapter...')
+    if (hoverPosition != 0 && titleValue != '' && base64 != null &&
+    typeof base64 == 'string' && video?.videoId) {
+
+      createChapter.mutate({
+        base64: base64.replace(/^data:(.*,)?/, ''),
+        videoId: video.videoId,
+        timestamp: hoverPosition,
+        title: titleValue
+      })
+    }
+
   }
 
   return (
@@ -149,10 +209,32 @@ function ProgressBar() {
               <div className={marker} onClick={open}
                 style={{ left: `${percent(hoverPosition, video.duration)}%` }} />
             </Popover.Target>
-            <Popover.Dropdown>
 
-              <TextInput label="Name" placeholder="Name" size="xs" />
-              <TextInput label="Email" placeholder="john@doe.com" size="xs" mt="xs" />
+            <Popover.Dropdown >
+              <Group >
+
+                {/* TIMESTAMP */}
+                <Text>{video.videoId} @ {timestamp} s</Text>
+
+                <ActionIcon color="lime" size="sm" radius="xl" variant="filled" m={10}
+                  disabled={hoverPosition == 0 || titleValue == '' || base64 == null}
+                  onClick={submitHandler} >
+                  <IconCheck size="1.625rem" />
+                </ActionIcon>
+              </Group>
+
+              {/* TITLE + PREVIEW INPUT */}
+              <Textarea onPaste={pasteHandler} autosize
+                value={titleValue} onChange={(e) => setTitleValue(e.currentTarget.value)}
+                placeholder="Add title" style={{ width: 300 }}/>
+
+              {/* PREVIEW */}
+              {typeof base64 == 'string' && base64.startsWith('data:video/mp4') &&
+              <video controls>
+                <source type="video/mp4" src={base64} />
+              </video> }
+              {typeof base64 == 'string' && base64.startsWith('data:image/png') &&
+                <img src={base64}/> }
 
             </Popover.Dropdown>
           </Popover>

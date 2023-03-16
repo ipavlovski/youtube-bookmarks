@@ -14,6 +14,7 @@ const t = initTRPC.context<Context>().create({
 
 
 export const appRouter = t.router({
+
   getChannels: t.procedure.input(
     z.object({}).optional()
   ).query(async () => {
@@ -40,6 +41,18 @@ export const appRouter = t.router({
     z.string().length(11)
   ).query(async ({ input }) => {
     return await h.getVideoForPlayback(input)
-  })
+  }),
+
+  createChapter: t.procedure.input(
+    z.object({
+      videoId: z.string(),
+      timestamp: z.number(),
+      title: z.string(),
+      base64: z.string()
+    })
+  ).mutation(async ({ input }) => {
+    return await h.createChapter(input)
+  }),
+
 
 })
