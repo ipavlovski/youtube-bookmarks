@@ -1,4 +1,4 @@
-import { ActionIcon, AspectRatio, Button, createStyles, Flex, Grid, Group, Popover, Skeleton, Text, Textarea, TextInput } from '@mantine/core'
+import { ActionIcon, AspectRatio, Button, createStyles, Flex, Grid, Group, HoverCard, Popover, Skeleton, Text, Textarea, TextInput } from '@mantine/core'
 import { useCallback, useEffect, useRef, useState, ClipboardEvent } from 'react'
 import YouTubePlayer from 'youtube-player'
 import type { YouTubePlayer as YTPlayer } from 'youtube-player/dist/types'
@@ -9,6 +9,8 @@ import { useDisclosure, useHotkeys, useHover } from '@mantine/hooks'
 import { Chapter } from '@prisma/client'
 import { IconCheck } from '@tabler/icons-react'
 import { Duration } from 'luxon'
+
+export const SERVER_URL = `https://localhost:${import.meta.env.VITE_SERVER_PORT}`
 
 interface YoutubeStore {
   player: YTPlayer | null
@@ -248,14 +250,33 @@ function ProgressBar() {
 function ProgressMarker({ chapter, duration }: {chapter: Chapter, duration: number }) {
   const { timestamp, title, capture } = chapter
   const { classes: { marker } } = useStyles()
+  const { seekTo } = YoutubeControls()
 
-  const clickHandler =() => { console.log(`clicked on ${title}`) }
+  const clickHandler =() => {
+    console.log(`clicked on ${title}: ${capture}`)
+    seekTo(timestamp)
+  }
 
   return (
-    <div className={marker} style={{ left: `${Math.floor(timestamp / duration) * 100}%` }}
-      onClick={() => clickHandler()}
-    >
-    </div>
+
+    <HoverCard width={280} shadow="md">
+      <HoverCard.Target>
+        <div className={marker}
+          style={{ left: `${percent(timestamp, duration)}%`, backgroundColor: 'red' }}
+          onClick={() => clickHandler()}/>
+      </HoverCard.Target>
+      <HoverCard.Dropdown>
+        <Text size="sm">{title}</Text>
+        {capture.endsWith('.mp4') &&
+              <video controls>
+                <source type="video/mp4" src={`${SERVER_URL}/capture/${capture}`} />
+              </video> }
+        {capture.endsWith('.png') &&
+                <img src={`${SERVER_URL}/capture/${capture}`}/> }
+      </HoverCard.Dropdown>
+    </HoverCard>
+
+
   )
 }
 
@@ -276,10 +297,6 @@ function Player() {
         modestbranding: 1,
         controls: 1
       },
-      // videoId: '_JQAve05o_0',
-      // events: {
-      //   ready: () => console.log('ready')
-      // }
     })
 
     const { getVideoId, getStatus } = YoutubeControls()
