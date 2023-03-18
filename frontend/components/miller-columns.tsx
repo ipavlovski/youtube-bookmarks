@@ -1,4 +1,4 @@
-import { Avatar, createStyles, Flex, Grid, Group, Image, Text } from '@mantine/core'
+import { Avatar, createStyles, Flex, Grid, Group, Image, Stack, Text } from '@mantine/core'
 import { useHotkeys } from '@mantine/hooks'
 import { Channel, Chapter, Video } from '@prisma/client'
 import { IconUser } from '@tabler/icons-react'
@@ -76,11 +76,17 @@ function VideoItem({ video }: {video: Video}) {
 
   return (
 
-    <Flex align={'center'} gap={12} m={8}>
+    <Group align={'center'} mt={16} spacing={2}>
+
+      <Text truncate
+        className={cx(video.id == selectedVideo && active)}
+        onClick={titleClickHandler}>
+        {video.title}
+      </Text>
 
       <Image
-        height={120}
-        width={200}
+        // height={120}
+        // width={200}
         radius='sm'
         src={getImageUrl(video?.thumbnail)}
         withPlaceholder
@@ -89,11 +95,7 @@ function VideoItem({ video }: {video: Video}) {
         style={{ cursor: 'pointer' }}
       />
 
-
-      <Text className={cx(video.id == selectedVideo && active)} onClick={titleClickHandler}>
-        {video.title}
-      </Text>
-    </Flex>
+    </Group>
   )
 }
 
@@ -115,11 +117,18 @@ function ChapterItem({ chapter: { id, timestamp, title, capture } }: {chapter: C
   }
 
   return (
-    <Flex align={'center'} gap={12} m={8}>
+    <Group align={'center'} mt={10} spacing={2}>
+
+      <Text truncate size={'sm'}
+        className={cx(id == selectedChapter && active)}
+        onClick={titleClickHandler}>
+        {title}
+      </Text>
 
       <Image
-        height={120}
-        width={200}
+        // height={120}
+        // width={200}
+        height={150}
         radius='sm'
         src={getCaptureUrl(capture)}
         withPlaceholder
@@ -128,10 +137,8 @@ function ChapterItem({ chapter: { id, timestamp, title, capture } }: {chapter: C
         style={{ cursor: 'pointer' }}
       />
 
-      <Text className={cx(id == selectedChapter && active)} onClick={titleClickHandler}>
-        {title}
-      </Text>
-    </Flex>
+
+    </Group>
   )
 }
 
@@ -314,11 +321,11 @@ export default function MillerColumns() {
         <ChannelColumn />
       </Grid.Col>
 
-      <Grid.Col span={5}>
+      <Grid.Col span={4}>
         <VideoColumn />
       </Grid.Col>
 
-      <Grid.Col span={4}>
+      <Grid.Col span={5}>
         <ChapterColumn />
       </Grid.Col>
     </Grid>
