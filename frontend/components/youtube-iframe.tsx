@@ -130,10 +130,11 @@ function ProgressBar() {
   const { classes: { bar, marker } } = useStyles()
   const { hovered, ref } = useHover()
   const [hoverPosition, setHoverPosition] = useState(0)
-  const [opened, { open, toggle }] = useDisclosure(false)
+  const [opened, { open, toggle, close }] = useDisclosure(false)
   const [base64, setBase64] = useState<string | ArrayBuffer | null>(null)
   const [titleValue, setTitleValue] = useState('')
 
+  const utils = trpc.useContext()
   const createChapter = trpc.createChapter.useMutation()
 
   const timestamp = Duration.fromObject({ seconds: hoverPosition }).toISOTime().match(/(00:)?(.*)/)?.[2]
@@ -182,22 +183,37 @@ function ProgressBar() {
   }
 
   const submitHandler = async () => {
-    console.log('Submitting a cnew chapter...')
     if (hoverPosition != 0 && titleValue != '' && base64 != null &&
-    typeof base64 == 'string' && video?.videoId) {
+        typeof base64 == 'string' && video?.videoId) {
 
-      createChapter.mutate({
+      //create new chapter
+      await createChapter.mutateAsync({
         base64: base64.replace(/^data:(.*,)?/, ''),
         videoId: video.videoId,
         timestamp: hoverPosition,
         title: titleValue
+      }, {
+        onSuccess: () => {
+          utils.getChapters.invalidate()
+          utils.getVideoForPlayback.invalidate()
+        },
       })
+
+      // on success, clear the inputs
+      setBase64(null)
+      setTitleValue('')
+      close()
     }
 
   }
 
+  const clickHandler = () => {
+    console.log(`clicked bar!: ${opened}`)
+    open()
+  }
+
   return (
-    <div className={bar} onMouseEnter={enterHandler} ref={ref} onClick={open}>
+    <div className={bar} onMouseEnter={enterHandler} ref={ref} onClick={clickHandler}>
       <div style={{ position: 'relative' }}>
         {/* chapter markers */}
         {video &&
@@ -206,7 +222,7 @@ function ProgressBar() {
 
         {/* hover/click capture */}
         {(hovered || opened) && hoverPosition != 0 && video != null && (
-          <Popover width={300} trapFocus position="bottom"
+          <Popover width={350} trapFocus position="bottom"
             withArrow shadow="md" opened={opened} onChange={toggle}>
             <Popover.Target>
               <div className={marker} onClick={open}
@@ -214,7 +230,7 @@ function ProgressBar() {
             </Popover.Target>
 
             <Popover.Dropdown >
-              <Group >
+              <Flex align={'center'}>
 
                 {/* TIMESTAMP */}
                 <Text>{video.videoId} @ {timestamp} s</Text>
@@ -224,7 +240,7 @@ function ProgressBar() {
                   onClick={submitHandler} >
                   <IconCheck size="1.625rem" />
                 </ActionIcon>
-              </Group>
+              </Flex>
 
               {/* TITLE + PREVIEW INPUT */}
               <Textarea onPaste={pasteHandler} autosize
@@ -233,11 +249,14 @@ function ProgressBar() {
 
               {/* PREVIEW */}
               {typeof base64 == 'string' && base64.startsWith('data:video/mp4') &&
-              <video controls>
-                <source type="video/mp4" src={base64} />
-              </video> }
+              <AspectRatio ratio={16 / 9} m={8} p={0} >
+                <video controls height={120} width={300} >
+                  <source type="video/mp4" src={base64} />
+                </video>
+              </AspectRatio>}
+
               {typeof base64 == 'string' && base64.startsWith('data:image/png') &&
-                <img src={base64}/> }
+                      <Image m={8} height={120} width={300} radius='sm' src={base64} />}
 
             </Popover.Dropdown>
           </Popover>
@@ -268,19 +287,16 @@ function ProgressMarker({ chapter, duration }: {chapter: Chapter, duration: numb
       </HoverCard.Target>
       <HoverCard.Dropdown>
         <Text size="sm">{title}</Text>
-        {capture.endsWith('.mp4') &&
-
-              <Image
-                height={120}
-                width={200}
-                radius='sm'
-                src={`${SERVER_URL}/capture/${capture}`.replace('.mp4', '.gif')}
-                withPlaceholder
-                placeholder={<Text align="center">No thumbnail found yet.</Text>}
-                style={{ cursor: 'pointer' }}
-              />}
-        {capture.endsWith('.png') &&
-                <img src={`${SERVER_URL}/capture/${capture}`}/> }
+        <Image
+          height={120} width={200}
+          radius='sm'
+          src={capture.endsWith('.mp4') ?
+            `${SERVER_URL}/capture/${capture}`.replace('.mp4', '.gif') :
+            `${SERVER_URL}/capture/${capture}`}
+          withPlaceholder
+          placeholder={<Text align="center">No thumbnail found yet.</Text>}
+          style={{ cursor: 'pointer' }}
+        />
       </HoverCard.Dropdown>
     </HoverCard>
 
