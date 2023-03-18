@@ -12,11 +12,18 @@ export async function getChannels() {
 }
 
 export async function getVideos({ channelId }: { channelId: number}) {
-  return await prisma.video.findMany({ where: { channelId }, take: 100 })
+  return await prisma.video.findMany({
+    where: { channelId },
+  })
 }
 
 export async function getChapters({ videoId }: { videoId: number}) {
-  return await prisma.chapter.findMany({ where: { videoId }, take: 100 })
+  return await prisma.chapter.findMany({
+    where: { videoId },
+    include: {
+      video: { select: { videoId: true } }
+    }
+  })
 }
 
 export async function getVideoForPlayback(videoId: string) {

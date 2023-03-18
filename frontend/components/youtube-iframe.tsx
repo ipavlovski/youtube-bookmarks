@@ -125,7 +125,9 @@ function ProgressBar() {
   const utils = trpc.useContext()
   const createChapter = trpc.createChapter.useMutation()
 
-  const timestamp = Duration.fromObject({ seconds: hoverPosition }).toISOTime().match(/(00:)?(.*)/)?.[2]
+  const formatDuration = (seconds: number) => {
+    return Duration.fromObject({ seconds: hoverPosition }).toISOTime().match(/(00:)?(.*)/)?.[2]
+  }
 
   const blobToBase64 = async (blob: Blob): Promise<string | ArrayBuffer | null> => {
     return new Promise((resolve, reject) => {
@@ -221,7 +223,7 @@ function ProgressBar() {
               <Flex align={'center'}>
 
                 {/* TIMESTAMP */}
-                <Text>{video.videoId} @ {timestamp} s</Text>
+                <Text>{formatDuration(hoverPosition)} s</Text>
 
                 <ActionIcon color="lime" size="sm" radius="xl" variant="filled" m={10}
                   disabled={hoverPosition == 0 || titleValue == '' || base64 == null}

@@ -52,7 +52,6 @@ function ChannelItem({ channel }: {channel: Channel}) {
         {channel.title}
       </Text>
     </Flex>
-
   )
 }
 
@@ -62,6 +61,7 @@ function VideoItem({ video }: {video: Video}) {
   const { setVideo } = useAppStore((state) => state.actions)
   const selectedVideo = useAppStore((state) => state.selection.videoId)
   const { setVideoId } = useYoutubeStore((state) => state.actions)
+  const playerVideoId = useYoutubeStore((state) => state.videoId)
 
   const { cueVideo } = YoutubeControls
 
@@ -70,6 +70,9 @@ function VideoItem({ video }: {video: Video}) {
   }
 
   const thumbnailClickHandler = () => {
+    // if the same video is already playing, don't do anything
+    if ( playerVideoId == video.videoId ) return
+
     cueVideo(video.videoId)
     setVideoId(video.videoId)
   }
@@ -100,20 +103,28 @@ function VideoItem({ video }: {video: Video}) {
 }
 
 
-function ChapterItem({ chapter: { id, timestamp, title, capture } }: {chapter: Chapter}) {
+function ChapterItem({ chapter: { id, timestamp, title, capture, video } }:
+{chapter: Awaited<ReturnType<typeof useFilteredChapters>>[0]}) {
 
   const { classes: { active }, cx } = useStyles()
   const { setChapter } = useAppStore((state) => state.actions)
   const selectedChapter = useAppStore((state) => state.selection.chapterId)
+  const { setVideoId } = useYoutubeStore((state) => state.actions)
+  const playerVideoId = useYoutubeStore((state) => state.videoId)
 
-  const { seekTo } = YoutubeControls
+  const { seekTo, cueVideo } = YoutubeControls
 
   const titleClickHandler = () => {
     setChapter(id)
   }
 
   const thumbnailClickHandler = () => {
-    seekTo(timestamp)
+    if ( playerVideoId == video.videoId ) {
+      seekTo(timestamp)
+    } else {
+      cueVideo(video.videoId, timestamp)
+      setVideoId(video.videoId)
+    }
   }
 
   return (
@@ -126,8 +137,6 @@ function ChapterItem({ chapter: { id, timestamp, title, capture } }: {chapter: C
       </Text>
 
       <Image
-        // height={120}
-        // width={200}
         height={150}
         radius='sm'
         src={getCaptureUrl(capture)}
@@ -136,7 +145,6 @@ function ChapterItem({ chapter: { id, timestamp, title, capture } }: {chapter: C
         onClick={thumbnailClickHandler}
         style={{ cursor: 'pointer' }}
       />
-
 
     </Group>
   )
@@ -193,82 +201,76 @@ const useArrowShortcuts = () => {
     channelId && videoId && chapterId ? 'chapter' : channelId && videoId ? 'video' : 'channel'
 
   useHotkeys([
-    [
-      'ArrowLeft', () => {
-        if (activePane == 'chapter') videoId != null && setVideo(videoId)
-        if (activePane == 'video') channelId != null && setChannel(channelId)
-      },
-    ],
-    [
-      'ArrowRight',() => {
+    ['ArrowLeft', () => {
+      if (activePane == 'chapter') videoId != null && setVideo(videoId)
+      if (activePane == 'video') channelId != null && setChannel(channelId)
+    }],
 
-        if (activePane == 'channel') {
-          const cachedVideo = getSelectionCache( { type: 'channel-video', key: channelId })
+    ['ArrowRight',() => {
 
-          if (cachedVideo == null) {
-            const videos = channelId && queryCache.getVideos(channelId)
-            if (videos && videos.length > 0) setVideo(videos[0].id)
-          }
-          if (cachedVideo != null) setVideo(cachedVideo.value)
+      if (activePane == 'channel') {
+        const cachedVideo = getSelectionCache( { type: 'channel-video', key: channelId })
+
+        if (cachedVideo == null) {
+          const videos = channelId && queryCache.getVideos(channelId)
+          if (videos && videos.length > 0) setVideo(videos[0].id)
         }
+        if (cachedVideo != null) setVideo(cachedVideo.value)
+      }
 
-        if (activePane == 'video') {
-          const cachedChapter = getSelectionCache( { type: 'video-chapter', key: videoId })
+      if (activePane == 'video') {
+        const cachedChapter = getSelectionCache( { type: 'video-chapter', key: videoId })
 
-          if (cachedChapter == null) {
-            const chapters = videoId && queryCache.getChapters(videoId)
-            if (chapters && chapters.length > 0) setChapter(chapters[0].id)
-          }
-          if (cachedChapter != null) setChapter(cachedChapter.value)
+        if (cachedChapter == null) {
+          const chapters = videoId && queryCache.getChapters(videoId)
+          if (chapters && chapters.length > 0) setChapter(chapters[0].id)
         }
-      },
-    ],
-    [
-      'ArrowUp',() => {
+        if (cachedChapter != null) setChapter(cachedChapter.value)
+      }
+    }],
 
-        if (activePane == 'channel') {
-          const channels = queryCache.getChannels()
-          const ind = getPrevIndex(channels, channelId)
-          ind != null && channels != null && setChannel(channels[ind].id)
-        }
+    ['ArrowUp',() => {
 
-        if (activePane == 'video') {
-          const videos = channelId == null ? undefined : queryCache.getVideos(channelId)
-          const ind = getPrevIndex(videos, videoId)
-          ind != null && videos != null && setVideo(videos[ind].id)
-        }
+      if (activePane == 'channel') {
+        const channels = queryCache.getChannels()
+        const ind = getPrevIndex(channels, channelId)
+        ind != null && channels != null && setChannel(channels[ind].id)
+      }
 
-        if (activePane == 'chapter') {
-          const chapters = videoId == null ? undefined : queryCache.getChapters(videoId)
-          const ind = getPrevIndex(chapters, chapterId)
-          ind != null && chapters != null && setChapter(chapters[ind].id)
+      if (activePane == 'video') {
+        const videos = channelId == null ? undefined : queryCache.getVideos(channelId)
+        const ind = getPrevIndex(videos, videoId)
+        ind != null && videos != null && setVideo(videos[ind].id)
+      }
 
-        }
-      },
-    ],
-    [
-      'ArrowDown',() => {
+      if (activePane == 'chapter') {
+        const chapters = videoId == null ? undefined : queryCache.getChapters(videoId)
+        const ind = getPrevIndex(chapters, chapterId)
+        ind != null && chapters != null && setChapter(chapters[ind].id)
 
-        if (activePane == 'channel') {
-          const channels = queryCache.getChannels()
-          const ind = getNextIndex(channels, channelId)
-          ind != null && channels != null && setChannel(channels[ind].id)
-        }
+      }
+    }],
 
-        if (activePane == 'video') {
-          const videos = channelId == null ? undefined : queryCache.getVideos(channelId)
-          const ind = getNextIndex(videos, videoId)
-          ind != null && videos != null && setVideo(videos[ind].id)
-        }
+    ['ArrowDown',() => {
 
-        if (activePane == 'chapter') {
-          const chapters = videoId == null ? undefined : queryCache.getChapters(videoId)
-          const ind = getNextIndex(chapters, chapterId)
-          ind != null && chapters != null && setChapter(chapters[ind].id)
-        }
+      if (activePane == 'channel') {
+        const channels = queryCache.getChannels()
+        const ind = getNextIndex(channels, channelId)
+        ind != null && channels != null && setChannel(channels[ind].id)
+      }
 
-      },
-    ],
+      if (activePane == 'video') {
+        const videos = channelId == null ? undefined : queryCache.getVideos(channelId)
+        const ind = getNextIndex(videos, videoId)
+        ind != null && videos != null && setVideo(videos[ind].id)
+      }
+
+      if (activePane == 'chapter') {
+        const chapters = videoId == null ? undefined : queryCache.getChapters(videoId)
+        const ind = getNextIndex(chapters, chapterId)
+        ind != null && chapters != null && setChapter(chapters[ind].id)
+      }
+    }],
   ])
 }
 
