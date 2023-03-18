@@ -152,9 +152,17 @@ function ChapterItem({ chapter: { id, timestamp, title, capture } }: {chapter: C
     <Flex align={'center'} gap={12} m={8}>
 
       {capture.endsWith('.mp4') &&
-      <video controls height={120} width={200} >
-        <source type="video/mp4" src={`${SERVER_URL}/capture/${capture}`} />
-      </video> }
+      <Image
+        height={120}
+        width={200}
+        radius='sm'
+        src={`${SERVER_URL}/capture/${capture}`.replace('.mp4', '.gif')}
+        withPlaceholder
+        placeholder={<Text align="center">No thumbnail found yet.</Text>}
+        onClick={thumbnailClickHandler}
+        style={{ cursor: 'pointer' }}
+      />}
+
 
       {capture.endsWith('.png') &&
       <Image

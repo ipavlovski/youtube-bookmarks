@@ -1,4 +1,5 @@
-import { ActionIcon, AspectRatio, Button, createStyles, Flex, Grid, Group, HoverCard, Popover, Skeleton, Text, Textarea, TextInput } from '@mantine/core'
+import { ActionIcon, AspectRatio, Button, createStyles, Flex, Grid, Group, HoverCard, Popover, Skeleton,
+  Image, Text, Textarea, TextInput } from '@mantine/core'
 import { useCallback, useEffect, useRef, useState, ClipboardEvent } from 'react'
 import YouTubePlayer from 'youtube-player'
 import type { YouTubePlayer as YTPlayer } from 'youtube-player/dist/types'
@@ -268,9 +269,16 @@ function ProgressMarker({ chapter, duration }: {chapter: Chapter, duration: numb
       <HoverCard.Dropdown>
         <Text size="sm">{title}</Text>
         {capture.endsWith('.mp4') &&
-              <video controls>
-                <source type="video/mp4" src={`${SERVER_URL}/capture/${capture}`} />
-              </video> }
+
+              <Image
+                height={120}
+                width={200}
+                radius='sm'
+                src={`${SERVER_URL}/capture/${capture}`.replace('.mp4', '.gif')}
+                withPlaceholder
+                placeholder={<Text align="center">No thumbnail found yet.</Text>}
+                style={{ cursor: 'pointer' }}
+              />}
         {capture.endsWith('.png') &&
                 <img src={`${SERVER_URL}/capture/${capture}`}/> }
       </HoverCard.Dropdown>
