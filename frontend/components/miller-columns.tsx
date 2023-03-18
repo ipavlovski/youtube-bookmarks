@@ -63,7 +63,7 @@ function VideoItem({ video }: {video: Video}) {
   const selectedVideo = useAppStore((state) => state.selection.videoId)
   const { setVideoId } = useYoutubeStore((state) => state.actions)
 
-  const { cueVideo } = YoutubeControls()
+  const { cueVideo } = YoutubeControls
 
   const titleClickHandler = () => {
     setVideo(video.id)
@@ -104,7 +104,7 @@ function ChapterItem({ chapter: { id, timestamp, title, capture } }: {chapter: C
   const { setChapter } = useAppStore((state) => state.actions)
   const selectedChapter = useAppStore((state) => state.selection.chapterId)
 
-  const { seekTo } = YoutubeControls()
+  const { seekTo } = YoutubeControls
 
   const titleClickHandler = () => {
     setChapter(id)

@@ -51,7 +51,7 @@ function CaptureButton() {
 
 
   const openHandler = async () => {
-    const { getPosition, getVideoId } = YoutubeControls()
+    const { getPosition, getVideoId } = YoutubeControls
     const position = await getPosition()
     setTimestamp(position || 0)
     const videoId = await getVideoId()

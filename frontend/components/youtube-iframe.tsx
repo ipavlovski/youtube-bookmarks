@@ -33,7 +33,7 @@ export const useYoutubeStore = create<YoutubeStore>((set) => ({
 
 
 const useYoutubeShortcuts = () => {
-  const { togglePlayPause, fastForward, rewind } = YoutubeControls()
+  const { togglePlayPause, fastForward, rewind } = YoutubeControls
 
   useHotkeys([
     ['space', async () => togglePlayPause()],
@@ -44,65 +44,53 @@ const useYoutubeShortcuts = () => {
   ])
 }
 
-export const YoutubeControls = () => {
-  const seekTo = async (seconds: number) => {
+export const YoutubeControls = {
+  async seekTo(seconds: number) {
     const player = useYoutubeStore.getState().player
     await player?.seekTo(seconds, true)
-  }
+  },
 
-  const cueVideo = async (videoId: string, startSeconds?: number) => {
+  async cueVideo(videoId: string, startSeconds?: number) {
     const player = useYoutubeStore.getState().player
     await player?.cueVideoById(videoId, startSeconds)
-  }
+  },
 
-  const togglePlayPause = async () => {
+  async togglePlayPause() {
     const player = useYoutubeStore.getState().player
-    const status = await getStatus()
+    const status = await this.getStatus()
     status == 'PLAYING' ? player?.pauseVideo() : player?.playVideo()
-  }
+  },
 
-  const fastForward = async () => {
-    const position = await getPosition()
-    position != null && await seekTo(position + 0.2)
-  }
+  async fastForward() {
+    const position = await this.getPosition()
+    position != null && await this.seekTo(position + 0.2)
+  },
 
-  const rewind = async () => {
-    const position = await getPosition()
-    position != null && await seekTo(position - 0.2)
-  }
+  async rewind() {
+    const position = await this.getPosition()
+    position != null && await this.seekTo(position - 0.2)
+  },
 
-  const getPosition = async () => {
+  async getPosition() {
     const player = useYoutubeStore.getState().player
     return player?.getCurrentTime().then((currentTime) => Math.round(currentTime * 1000) / 1000)
-  }
+  },
 
-  const getStatus = async () => {
+  async getStatus() {
     const player = useYoutubeStore.getState().player
     const stateCode = await player?.getPlayerState()
     return Object.entries(PlayerStates).find((v) => v[1] == stateCode)?.[0]
-  }
+  },
 
-  const getDuration = async () => {
+  async getDuration() {
     const player = useYoutubeStore.getState().player
     return player?.getDuration()
-  }
+  },
 
-  const getVideoId = async () => {
+  async getVideoId() {
     const player = useYoutubeStore.getState().player
     const url = await player?.getVideoUrl() || null
     return url && new URL(url).searchParams?.get('v')
-  }
-
-  return {
-    seekTo,
-    cueVideo: cueVideo,
-    togglePlayPause,
-    fastForward,
-    rewind,
-    getPosition,
-    getStatus,
-    getDuration,
-    getVideoId
   }
 }
 
@@ -177,7 +165,7 @@ function ProgressBar() {
 
 
   const enterHandler = async () => {
-    const { getPosition } = YoutubeControls()
+    const { getPosition } = YoutubeControls
     const position = await getPosition()
     ! opened && setHoverPosition(position || 0)
   }
@@ -270,7 +258,7 @@ function ProgressBar() {
 function ProgressMarker({ chapter, duration }: {chapter: Chapter, duration: number }) {
   const { timestamp, title, capture } = chapter
   const { classes: { marker } } = useStyles()
-  const { seekTo } = YoutubeControls()
+  const { seekTo } = YoutubeControls
 
   const clickHandler =() => {
     console.log(`clicked on ${title}: ${capture}`)
@@ -321,7 +309,7 @@ function Player() {
       },
     })
 
-    const { getVideoId, getStatus } = YoutubeControls()
+    const { getVideoId, getStatus } = YoutubeControls
 
     player.on('ready', () => {
       console.log('player ready.')
