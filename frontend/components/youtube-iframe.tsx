@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, ClipboardEvent } from 'react'
 import YouTubePlayer from 'youtube-player'
 import type { YouTubePlayer as YTPlayer } from 'youtube-player/dist/types'
 import { create } from 'zustand'
-import { ORIGIN_URL, trpc, useAppStore, useUiStore, useVideoForPlayback } from 'components/app'
+import { getCaptureUrl, ORIGIN_URL, trpc, useAppStore, useUiStore, useVideoForPlayback } from 'components/app'
 import PlayerStates from 'youtube-player/dist/constants/PlayerStates'
 import { useDisclosure, useHotkeys, useHover } from '@mantine/hooks'
 import { Chapter } from '@prisma/client'
@@ -290,9 +290,7 @@ function ProgressMarker({ chapter, duration }: {chapter: Chapter, duration: numb
         <Image
           height={120} width={200}
           radius='sm'
-          src={capture.endsWith('.mp4') ?
-            `${SERVER_URL}/capture/${capture}`.replace('.mp4', '.gif') :
-            `${SERVER_URL}/capture/${capture}`}
+          src={getCaptureUrl(capture)}
           withPlaceholder
           placeholder={<Text align="center">No thumbnail found yet.</Text>}
           style={{ cursor: 'pointer' }}

@@ -1,13 +1,10 @@
-import { Avatar, createStyles, Flex, Grid, Image, Text } from '@mantine/core'
+import { Avatar, createStyles, Flex, Grid, Group, Image, Text } from '@mantine/core'
 import { useHotkeys } from '@mantine/hooks'
 import { Channel, Chapter, Video } from '@prisma/client'
 import { IconUser } from '@tabler/icons-react'
 import { useQueryClient } from '@tanstack/react-query'
-import { getSelectionCache, SERVER_URL, useAppStore, useFilteredChannels, useFilteredChapters, useFilteredVideos } from 'components/app'
+import { getCaptureUrl, getImageUrl, getSelectionCache, SERVER_URL, useAppStore, useFilteredChannels, useFilteredChapters, useFilteredVideos } from 'components/app'
 import { useYoutubeStore, YoutubeControls } from 'components/youtube-iframe'
-
-
-const url = (src: string | null) => src && `${SERVER_URL}/images/${src}`
 
 
 //  ==============================
@@ -48,7 +45,7 @@ function ChannelItem({ channel }: {channel: Channel}) {
 
   return (
     <Flex align={'center'} gap={12}>
-      <Avatar src={url(channel?.icon)} radius="xl" m={4} >
+      <Avatar src={getImageUrl(channel?.icon)} radius="xl" m={4} >
         <IconUser size="1.5rem" />
       </Avatar>
       <Text className={cx(channel.id == selectedChannel && active)} onClick={clickHandler}>
@@ -85,7 +82,7 @@ function VideoItem({ video }: {video: Video}) {
         height={120}
         width={200}
         radius='sm'
-        src={url(video?.thumbnail)}
+        src={getImageUrl(video?.thumbnail)}
         withPlaceholder
         placeholder={<Text align="center">No thumbnail found yet.</Text>}
         onClick={thumbnailClickHandler}
@@ -120,30 +117,16 @@ function ChapterItem({ chapter: { id, timestamp, title, capture } }: {chapter: C
   return (
     <Flex align={'center'} gap={12} m={8}>
 
-      {capture.endsWith('.mp4') &&
       <Image
         height={120}
         width={200}
         radius='sm'
-        src={`${SERVER_URL}/capture/${capture}`.replace('.mp4', '.gif')}
+        src={getCaptureUrl(capture)}
         withPlaceholder
         placeholder={<Text align="center">No thumbnail found yet.</Text>}
         onClick={thumbnailClickHandler}
         style={{ cursor: 'pointer' }}
-      />}
-
-
-      {capture.endsWith('.png') &&
-      <Image
-        height={120}
-        width={200}
-        radius='sm'
-        src={`${SERVER_URL}/capture/${capture}`}
-        withPlaceholder
-        placeholder={<Text align="center">No thumbnail found yet.</Text>}
-        onClick={thumbnailClickHandler}
-        style={{ cursor: 'pointer' }}
-      /> }
+      />
 
       <Text className={cx(id == selectedChapter && active)} onClick={titleClickHandler}>
         {title}
@@ -331,11 +314,11 @@ export default function MillerColumns() {
         <ChannelColumn />
       </Grid.Col>
 
-      <Grid.Col span={6}>
+      <Grid.Col span={5}>
         <VideoColumn />
       </Grid.Col>
 
-      <Grid.Col span={3}>
+      <Grid.Col span={4}>
         <ChapterColumn />
       </Grid.Col>
     </Grid>

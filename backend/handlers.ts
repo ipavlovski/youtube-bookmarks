@@ -29,16 +29,6 @@ export async function getVideoForPlayback(videoId: string) {
   })
 }
 
-
-// async function saveCapturedMedia(base64: string, videoId: string) {
-//   const ext
-//   const filename = `${Date.now()}-${videoId}.${ext}`
-//   const buffer = Buffer.from(base64, 'base64')
-//   await writeFile(filename, buffer)
-//   return filename
-// }
-
-
 async function saveCapturedMedia(base64: string, videoId: string) {
   const basename = `${Date.now()}-${videoId}`
   let filename: string | null = null
@@ -64,6 +54,9 @@ async function saveCapturedMedia(base64: string, videoId: string) {
     }
     if (! filename) throw new Error('Failed to get matchign mimes.')
     rename(`${dir}/${basename}.unknown`, `${dir}/${filename}`)
+
+    if (filename.endsWith('.mp4'))
+      await execute(`ffmpeg -i ${dir}/${filename} ${dir}/${filename.replace('.mp4', '.gif')}`)
 
   } catch {
     console.log('Error during file-type identification')
