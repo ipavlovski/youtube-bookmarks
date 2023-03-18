@@ -117,7 +117,7 @@ function VideoItem({ video }: {video: Video}) {
 }
 
 function VideoColumn() {
-  const { classes: { column }, cx } = useStyles()
+  const { classes: { column } } = useStyles()
   const videos = useFilteredVideos()
 
   return (
@@ -132,20 +132,57 @@ function VideoColumn() {
 //  ================================
 
 
-function ChapterItem({ chapter }: {chapter: Chapter}) {
+function ChapterItem({ chapter: { id, timestamp, title, capture } }: {chapter: Chapter}) {
+
+  const { classes: { active }, cx } = useStyles()
+  const { setChapter } = useAppStore((state) => state.actions)
+  const selectedChapter = useAppStore((state) => state.selection.chapterId)
+
+  const { seekTo } = YoutubeControls()
+
+  const titleClickHandler = () => {
+    setChapter(id)
+  }
+
+  const thumbnailClickHandler = () => {
+    seekTo(timestamp)
+  }
+
   return (
-    <Text key={chapter.id}>{chapter.title}</Text>
+    <Flex align={'center'} gap={12} m={8}>
+
+      {capture.endsWith('.mp4') &&
+      <video controls height={120} width={200} >
+        <source type="video/mp4" src={`${SERVER_URL}/capture/${capture}`} />
+      </video> }
+
+      {capture.endsWith('.png') &&
+      <Image
+        height={120}
+        width={200}
+        radius='sm'
+        src={`${SERVER_URL}/capture/${capture}`}
+        withPlaceholder
+        placeholder={<Text align="center">No thumbnail found yet.</Text>}
+        onClick={thumbnailClickHandler}
+        style={{ cursor: 'pointer' }}
+      /> }
+
+      <Text className={cx(id == selectedChapter && active)} onClick={titleClickHandler}>
+        {title}
+      </Text>
+    </Flex>
   )
 }
 
 function ChapterColumn() {
+  const { classes: { column } } = useStyles()
   const chapters = useFilteredChapters()
-  const selectedChapter = useAppStore((state) => state.selection.chapterId)
 
   return (
-    <>
+    <div className={column}>
       {chapters.map((chapter) => <ChapterItem key={chapter.id} chapter={chapter}/>)}
-    </>
+    </div>
   )
 }
 
@@ -171,9 +208,10 @@ const useArrowShortcuts = () => {
     ],
     [
       'ArrowRight',() => {
+
         if (activePane == 'channel') {
           const cachedVideo = getSelectionCache( { type: 'channel-video', key: channelId! })
-          console.log(`channel->vid right, cached: ${cachedVideo}`)
+
           if (cachedVideo == null) {
             const videos = queryClient.getQueryData<Video[]>(
               [['getVideos'], { type: 'query', input: { channelId: channelId! } }]
@@ -182,21 +220,30 @@ const useArrowShortcuts = () => {
           }
           if (cachedVideo != null) setVideo(cachedVideo.value)
         }
+
         if (activePane == 'video') {
-          console.log('video->chapter right')
           const cachedChapter = getSelectionCache( { type: 'video-chapter', key: videoId! })
+
+          if (cachedChapter == null) {
+            const chapters = queryClient.getQueryData<Chapter[]>(
+              [['getChapters'], { type: 'query', input: { videoId: videoId! } }]
+            )
+            if (chapters && chapters.length > 0) setChapter(chapters[0].id)
+          }
           if (cachedChapter != null) setChapter(cachedChapter.value)
         }
       },
     ],
     [
       'ArrowUp',() => {
+
         if (activePane == 'channel') {
           const channels = queryClient.getQueryData<Channel[]>([['getChannels'], { type: 'query' }])
           const ind = channels?.findIndex((channel) => channel.id == channelId)
           if (ind != null && ind == 0) return
           if (channels != null && ind != null && ind != -1) setChannel(channels[ind-1].id)
         }
+
         if (activePane == 'video') {
           const videos = queryClient.getQueryData<Video[]>(
             [['getVideos'], { type: 'query', input: { channelId: channelId! } }]
@@ -205,8 +252,11 @@ const useArrowShortcuts = () => {
           if (ind != null && ind == 0) return
           if (videos != null && ind != null && ind != -1) setVideo(videos[ind-1].id)
         }
+
         if (activePane == 'chapter') {
-          const chapters = queryClient.getQueryData<Chapter[]>(['chapters'])
+          const chapters = queryClient.getQueryData<Chapter[]>(
+            [['getChapters'], { type: 'query', input: { videoId: videoId! } }]
+          )
           const ind = chapters?.findIndex((chapter) => chapter.id == chapterId)
           if (ind != null && ind == 0) return
           if (chapters != null && ind != null && ind != -1) setChapter(chapters[ind-1].id)
@@ -215,12 +265,14 @@ const useArrowShortcuts = () => {
     ],
     [
       'ArrowDown',() => {
+
         if (activePane == 'channel') {
           const channels = queryClient.getQueryData<Channel[]>([['getChannels'], { type: 'query' }])
           const ind = channels?.findIndex((channel) => channel.id == channelId)
           if (ind != null && ind != -1 && ind + 1 == channels?.length) return
           if (channels != null && ind != null && ind != -1) setChannel(channels[ind+1].id)
         }
+
         if (activePane == 'video') {
           const videos = queryClient.getQueryData<Video[]>(
             [['getVideos'], { type: 'query', input: { channelId: channelId! } }]
@@ -229,8 +281,11 @@ const useArrowShortcuts = () => {
           if (ind != null && ind != -1 && ind + 1 == videos?.length) return
           if (videos != null && ind != null && ind != -1) setVideo(videos[ind+1].id)
         }
+
         if (activePane == 'chapter') {
-          const chapters = queryClient.getQueryData<Chapter[]>(['chapters'])
+          const chapters = queryClient.getQueryData<Chapter[]>(
+            [['getChapters'], { type: 'query', input: { videoId: videoId! } }]
+          )
           const ind = chapters?.findIndex((chapter) => chapter.id == chapterId)
           if (ind != null && ind == 0 && ind + 1 == chapters?.length) return
           if (chapters != null && ind != null && ind != -1) setChapter(chapters[ind+1].id)
