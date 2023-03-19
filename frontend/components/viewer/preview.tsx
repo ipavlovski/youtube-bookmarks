@@ -1,5 +1,5 @@
 import { AspectRatio, Skeleton } from '@mantine/core'
-import { useUiStore } from 'components/app'
+import { useUiStore } from 'frontend/apis/stores'
 
 
 export default function Preview() {

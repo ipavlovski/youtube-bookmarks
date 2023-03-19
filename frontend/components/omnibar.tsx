@@ -1,5 +1,5 @@
 import { Button, createStyles, Flex, MultiSelect } from '@mantine/core'
-import { useUiStore } from 'components/app'
+import { useUiStore } from 'frontend/apis/stores'
 import { useState } from 'react'
 
 const useStyles = createStyles((theme) => ({

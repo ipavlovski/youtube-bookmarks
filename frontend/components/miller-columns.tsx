@@ -1,10 +1,10 @@
-import { Avatar, createStyles, Flex, Grid, Group, Image, Stack, Text } from '@mantine/core'
-import { useHotkeys } from '@mantine/hooks'
-import { Channel, Chapter, Video } from '@prisma/client'
+import { Avatar, createStyles, Flex, Grid, Group, Image, Text } from '@mantine/core'
+import { Channel, Video } from '@prisma/client'
 import { IconUser } from '@tabler/icons-react'
-import { useQueryClient } from '@tanstack/react-query'
-import { getCaptureUrl, getImageUrl, getSelectionCache, SERVER_URL, useAppStore, useFilteredChannels, useFilteredChapters, useFilteredVideos } from 'components/app'
-import { useYoutubeStore, YoutubeControls } from 'components/youtube-iframe'
+import { useArrowShortcuts, YoutubeControls } from 'frontend/apis/hooks'
+import { useFilteredChannels, useFilteredChapters, useFilteredVideos } from 'frontend/apis/queries'
+import { useAppStore, useYoutubeStore } from 'frontend/apis/stores'
+import { getCaptureUrl, getImageUrl } from 'frontend/apis/utils'
 
 
 //  ==============================
@@ -88,8 +88,6 @@ function VideoItem({ video }: {video: Video}) {
       </Text>
 
       <Image
-        // height={120}
-        // width={200}
         radius='sm'
         src={getImageUrl(video?.thumbnail)}
         withPlaceholder
@@ -151,135 +149,6 @@ function ChapterItem({ chapter: { id, timestamp, title, capture, video } }:
 }
 
 
-//  ==================================
-//              NAVIGATION
-//  ==================================
-
-
-const useQueryCache = () => {
-  const queryClient = useQueryClient()
-
-  const getChannels = () => {
-    return queryClient.getQueryData<Channel[]>([['getChannels'], { type: 'query' }])
-  }
-
-  const getVideos = (channelId: number) => {
-    return queryClient.getQueryData<Video[]>(
-      [['getVideos'], { type: 'query', input: { channelId } }]
-    )
-  }
-
-  const getChapters = (videoId: number) => {
-    return queryClient.getQueryData<Chapter[]>(
-      [['getChapters'], { type: 'query', input: { videoId } }]
-    )
-  }
-
-  return { getChannels, getVideos, getChapters }
-}
-
-const getPrevIndex = <T,>(arr: Array<T & { id: number }> | undefined, id: number | null) => {
-  if (id == null || arr == null) return null
-  const ind = arr.findIndex((elt) => elt.id == id)
-  return ind != null && ind > 0 ? ind - 1 : null
-}
-
-const getNextIndex = <T,>(arr: Array<T & { id: number }> | undefined, id: number | null) => {
-  if (id == null || arr == null) return null
-  const ind = arr.findIndex((elt) => elt.id == id)
-  return ind != null && ind != -1 && ind + 1 < arr.length ? ind + 1 : null
-}
-
-
-const useArrowShortcuts = () => {
-  const { channelId, videoId, chapterId } = useAppStore((state) => state.selection)
-  const { setChannel, setVideo, setChapter } = useAppStore((state) => state.actions)
-  const queryCache = useQueryCache()
-
-
-  const activePane: 'channel' | 'video' | 'chapter' =
-    channelId && videoId && chapterId ? 'chapter' : channelId && videoId ? 'video' : 'channel'
-
-  useHotkeys([
-    ['ArrowLeft', () => {
-      if (activePane == 'chapter') videoId != null && setVideo(videoId)
-      if (activePane == 'video') channelId != null && setChannel(channelId)
-    }],
-
-    ['ArrowRight',() => {
-
-      if (activePane == 'channel') {
-        const cachedVideo = getSelectionCache( { type: 'channel-video', key: channelId })
-
-        if (cachedVideo == null) {
-          const videos = channelId && queryCache.getVideos(channelId)
-          if (videos && videos.length > 0) setVideo(videos[0].id)
-        }
-        if (cachedVideo != null) setVideo(cachedVideo.value)
-      }
-
-      if (activePane == 'video') {
-        const cachedChapter = getSelectionCache( { type: 'video-chapter', key: videoId })
-
-        if (cachedChapter == null) {
-          const chapters = videoId && queryCache.getChapters(videoId)
-          if (chapters && chapters.length > 0) setChapter(chapters[0].id)
-        }
-        if (cachedChapter != null) setChapter(cachedChapter.value)
-      }
-    }],
-
-    ['ArrowUp',() => {
-
-      if (activePane == 'channel') {
-        const channels = queryCache.getChannels()
-        const ind = getPrevIndex(channels, channelId)
-        ind != null && channels != null && setChannel(channels[ind].id)
-      }
-
-      if (activePane == 'video') {
-        const videos = channelId == null ? undefined : queryCache.getVideos(channelId)
-        const ind = getPrevIndex(videos, videoId)
-        ind != null && videos != null && setVideo(videos[ind].id)
-      }
-
-      if (activePane == 'chapter') {
-        const chapters = videoId == null ? undefined : queryCache.getChapters(videoId)
-        const ind = getPrevIndex(chapters, chapterId)
-        ind != null && chapters != null && setChapter(chapters[ind].id)
-
-      }
-    }],
-
-    ['ArrowDown',() => {
-
-      if (activePane == 'channel') {
-        const channels = queryCache.getChannels()
-        const ind = getNextIndex(channels, channelId)
-        ind != null && channels != null && setChannel(channels[ind].id)
-      }
-
-      if (activePane == 'video') {
-        const videos = channelId == null ? undefined : queryCache.getVideos(channelId)
-        const ind = getNextIndex(videos, videoId)
-        ind != null && videos != null && setVideo(videos[ind].id)
-      }
-
-      if (activePane == 'chapter') {
-        const chapters = videoId == null ? undefined : queryCache.getChapters(videoId)
-        const ind = getNextIndex(chapters, chapterId)
-        ind != null && chapters != null && setChapter(chapters[ind].id)
-      }
-    }],
-  ])
-}
-
-
-//  ===============================
-//              COLUMNS
-//  ===============================
-
-
 function ChannelColumn() {
   const { classes: { column } } = useStyles()
   const channels = useFilteredChannels()
@@ -330,6 +199,7 @@ export default function MillerColumns() {
       <Grid.Col span={5}>
         <ChapterColumn />
       </Grid.Col>
+
     </Grid>
   )
 }
