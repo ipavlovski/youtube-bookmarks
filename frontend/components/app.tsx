@@ -7,14 +7,13 @@ import { httpBatchLink } from '@trpc/client'
 import { createTRPCReact } from '@trpc/react-query'
 import superjson from 'superjson'
 import { create } from 'zustand'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 import type { AppRouter } from 'frontend/../trpc'
 import YoutubeIframe, { useYoutubeStore } from 'components/youtube-iframe'
 import Omnibar from 'components/omnibar'
 import Preview from 'components/preview'
 import MillerColumns from 'components/miller-columns'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import Header from 'components/header'
 
 export const SERVER_URL = `https://localhost:${import.meta.env.VITE_SERVER_PORT}`
 export const ORIGIN_URL = `https://localhost:${import.meta.env.VITE_PORT}`
@@ -197,10 +196,12 @@ function Root() {
 
   return (
     <>
-      <Header />
       <YoutubeIframe />
+      <Preview />
+      <Container size={'sm'}>
+        <Omnibar />
+      </Container>
       <Container pt={16} size={'lg'}>
-        {/* <Preview /> */}
         <MillerColumns />
       </Container>
     </>

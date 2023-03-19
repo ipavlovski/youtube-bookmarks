@@ -1,4 +1,5 @@
-import { Container, createStyles, MultiSelect } from '@mantine/core'
+import { Button, createStyles, Flex, MultiSelect } from '@mantine/core'
+import { useUiStore } from 'components/app'
 import { useState } from 'react'
 
 const useStyles = createStyles((theme) => ({
@@ -10,8 +11,12 @@ export default function Omnibar() {
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [allTags, setAllTags] = useState<{ name: string}[]>([])
 
+  const showPreview = useUiStore((state) => state.showPreview)
+  const { toggleComments, toggleDescription, togglePreview } = useUiStore((state) => state.actions)
+
+
   return (
-    <Container size={'xs'}>
+    <Flex align={'center'} gap={8} >
       <MultiSelect
         classNames={{ input: inputSx }} radius="lg"
         searchable creatable
@@ -21,6 +26,19 @@ export default function Omnibar() {
         getCreateLabel={(query) => `+ Create tag #${query}`}
         onCreate={(tagName) => { return setAllTags([...allTags, { name: tagName }]), tagName }}
       />
-    </Container>
+
+      <Button style={{ marginRight: 10 }} onClick={() => toggleDescription()}>
+        Description
+      </Button>
+      <Button style={{ marginRight: 10 }} onClick={() => toggleComments()}>
+        Comments
+      </Button>
+      <Button style={{ marginRight: 10 }} onClick={() => {
+        console.log('show preview:', showPreview)
+        togglePreview()
+      }}>
+        Preview
+      </Button>
+    </Flex>
   )
 }

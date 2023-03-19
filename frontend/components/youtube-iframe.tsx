@@ -337,10 +337,11 @@ function VideoDescription({ description }: {description: string}) {
 
 export default function YoutubeIframe() {
   const shouldShowDescription = useUiStore((state) => state.showDescription)
+  const showPreview = useUiStore((state) => state.showPreview)
 
   return (
     <>
-      <Grid>
+      <Grid style={{ display: showPreview ? 'none' : 'block' }}>
         <Grid.Col span={shouldShowDescription ? 8 : 12}>
           <AspectRatio ratio={16 / 9} mx="auto" p={0} >
             <Player />
